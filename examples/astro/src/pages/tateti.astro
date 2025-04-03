@@ -3,146 +3,164 @@ import Layout from "../layouts/Layout.astro";
 import { state } from "../state";
 
 // Game state management
+// Define el tamaño del tablero (3x3).
 const BOARD_SIZE = 3;
 
-// Function to check for winner
-function checkWinner(board: string[][]): string | null {
-  // Check rows
+// Esta función revisa si hay un ganador en el tablero.
+function checkWinner(board: string[][]): string | null { // board es un arreglo de arreglos que representa el tablero
+  // Check filas
   for (let i = 0; i < BOARD_SIZE; i++) {
     if (
-      board[i][0] &&
-      board[i][0] === board[i][1] &&
-      board[i][1] === board[i][2]
+      board[i][0] && // Verifica si la celda de la esquina izquierda no está vacía
+      board[i][0] === board[i][1] &&  // Verifica si la celda de la esquina izquierda es igual a la celda del medio
+      board[i][1] === board[i][2] // Verifica si la celda del medio es igual a la celda de la esquina derecha
     ) {
       return board[i][0];
     }
   }
 
-  // Check columns
+  // Check columnas
+  // Si todos los elementos en una fila son iguales (X o O), hay un ganador.
   for (let i = 0; i < BOARD_SIZE; i++) {
     if (
-      board[0][i] &&
-      board[0][i] === board[1][i] &&
-      board[1][i] === board[2][i]
+      board[0][i] && // Verifica si la celda de la esquina superior izquierda no está vacía
+      board[0][i] === board[1][i] && // Verifica si la celda de la esquina superior izquierda es igual a la celda del medio
+      board[1][i] === board[2][i] // Verifica si la celda del medio es igual a la celda de la esquina inferior derecha
     ) {
       return board[0][i];
     }
   }
 
-  // Check diagonals
+  // Check diagonales
+  // Si todos los elementos en una diagonal son iguales (X o O), hay un ganador.
   if (
-    board[0][0] &&
-    board[0][0] === board[1][1] &&
-    board[1][1] === board[2][2]
+    board[0][0] && // Verifica si la celda de la esquina superior izquierda no está vacía
+    board[0][0] === board[1][1] && // Verifica si la celda de la esquina superior izquierda es igual a la celda del medio
+    board[1][1] === board[2][2] // Verifica si la celda del medio es igual a la celda de la esquina inferior derecha
   ) {
     return board[0][0];
   }
   if (
-    board[0][2] &&
-    board[0][2] === board[1][1] &&
-    board[1][1] === board[2][0]
+    board[0][2] && // Verifica si la celda de la esquina superior derecha no está vacía
+    board[0][2] === board[1][1] && // Verifica si la celda de la esquina superior derecha es igual a la celda del medio
+    board[1][1] === board[2][0] // Verifica si la celda del medio es igual a la celda de la esquina inferior izquierda
   ) {
     return board[0][2];
   }
 
   // Check for tie
+  // Si todas las celdas están ocupadas y no hay ganador, es un empate.
   if (board.every((row) => row.every((cell) => cell !== ""))) {
     return "tie";
   }
-
+  // Si no hay ganador, devuelve null.
   return null;
 }
 
+// Manejo de solicitudes HTTP
+// Si la solicitud es de tipo POST, procesa el movimiento del jugador.
+// Este bloque se ejecuta cuando hay una solicitud POST, es decir, cuando un jugador hace un movimiento o reinicia la partida.
 if (Astro.request.method === "POST") {
   try {
-    const formData = await Astro.request.formData();
-    const move = formData.get("move")?.toString();
-    const reset = formData.get("reset")?.toString();
+    // Obtiene los datos del formulario enviado por el jugador.
+    const formData = await Astro.request.formData(); // Obtiene los datos del formulario
+    const move = formData.get("move")?.toString(); // El movimiento del jugador (fila,columna)
+    const reset = formData.get("reset")?.toString(); // Reiniciar el juego
 
-    if (move) {
-      const [row, col] = move.split(",").map(Number);
-      if (state.board[row][col] === "") {
-        state.board[row][col] = state.currentPlayer;
-        state.winner = checkWinner(state.board);
+    if (move) { // Si hay un movimiento
+      const [row, col] = move.split(",").map(Number); // Convierte la cadena en números
+      if (state.board[row][col] === "") { // Si la celda está vacía
+        state.board[row][col] = state.currentPlayer; // Marca la celda con el jugador actual
+        state.winner = checkWinner(state.board); // Verifica si hay un ganador
 
-        if (state.winner) {
-          state.gameOver = true;
-        } else {
-          state.currentPlayer = state.currentPlayer === "X" ? "O" : "X";
+        if (state.winner) { // Si hay un ganador
+          state.gameOver = true; // Marca el juego como terminado
+        } else { // Si no hay ganador
+          state.currentPlayer = state.currentPlayer === "X" ? "O" : "X"; // Cambia al siguiente jugador
         }
       }
     }
 
-    if (reset) {
-      state.board = Array(BOARD_SIZE)
-        .fill(null)
-        .map(() => Array(BOARD_SIZE).fill(""));
-      state.currentPlayer = "X";
-      state.winner = null;
-      state.gameOver = false;
+    if (reset) { // Si se solicita reiniciar el juego
+      state.board = Array(BOARD_SIZE) // Crea un nuevo tablero vacío
+        .fill(null) // Llena el tablero con null
+        .map(() => Array(BOARD_SIZE).fill("")); // Llena cada fila con celdas vacías
+      state.currentPlayer = "X"; // Reinicia el jugador actual a "X"
+      state.winner = null; // Reinicia el ganador a null
+      state.gameOver = false; // Marca el juego como no terminado
     }
-  } catch (error) {
-    console.error("Error processing form data:", error);
+  } catch (error) { // Manejo de errores
+    console.error("Error processing form data:", error); // Muestra un error en la consola si hay un problema al procesar los datos del formulario
   }
 }
 
-const { board, currentPlayer, winner, gameOver } = state;
-console.log(state);
+const { board, currentPlayer, winner, gameOver } = state; // Desestructura el estado para obtener el tablero, el jugador actual, el ganador y si el juego ha terminado
+console.log(state); // Muestra el estado actual en la consola para depuración
 ---
 
-<Layout>
+<!-- Renderizado en la interfaz gráfica -->
+<Layout> <!-- Componente de diseño que envuelve el contenido -->
   <div class="game-container">
     <h2>TaTeTi</h2>
-    <div class="status">
+    <div class="status"> <!-- Muestra el estado del juego -->
       {
         gameOver ? (
           winner === "tie" ? (
-            <p>Empate!</p>
+            <p>Empate!</p> // Mensaje de empate
           ) : (
-            <p>Jugador {winner} gana!</p>
+            <p>Jugador {winner} gana!</p> // Mensaje de ganador
           )
         ) : (
-          <p>Jugador: {currentPlayer}</p>
+          <p>Jugador: {currentPlayer}</p> // Mensaje del jugador actual
         )
       }
     </div>
-
+    <!-- Formulario para enviar el movimiento del jugador, renderizar el tablero -->
     <form method="POST" class="game-board">
-      <input type="hidden" name="board" value={JSON.stringify(board)} />
-      <input type="hidden" name="player" value={currentPlayer} />
-      {
-        board.map((row, rowIndex) => (
+      <input type="hidden" name="board" value={JSON.stringify(board)} /> <!-- Oculta el tablero para enviarlo en el formulario -->
+      <input type="hidden" name="player" value={currentPlayer} /> <!-- Oculta el tablero y el jugador actual para enviarlos en el formulario -->
+      { 
+        board.map((row, rowIndex) => ( // Mapea cada fila del tablero
+        // Crea una fila para cada fila del tablero
+        // Mapea cada celda de la fila
+        // Crea un botón para cada celda
+        // El botón envía el formulario al hacer clic
+        // Nombre del botón para identificar el movimiento
+        // Valor del botón que indica la posición de la celda
+        // Deshabilita el botón si el juego ha terminado o la celda ya está ocupada
+        // Clase CSS para el botón, cambia según el valor de la celda
+        // Muestra el valor de la celda (X, O o vacío)
           <div class="row">
-            {row.map((cell, colIndex) => (
-              <button
-                type="submit"
-                name="move"
-                value={`${rowIndex},${colIndex}`}
-                disabled={gameOver || cell !== ""}
-                class={`cell ${cell.toLowerCase()}`}
-              >
-                {cell}
+            {row.map((cell, colIndex) => ( 
+              <button 
+                type="submit" 
+                name="move" 
+                value={`${rowIndex},${colIndex}`} 
+                disabled={gameOver || cell !== ""} 
+                class={`cell ${cell.toLowerCase()}`} 
+              > 
+               {cell}
               </button>
-            ))}
+          ))}
           </div>
         ))
       }
     </form>
-
+    <!-- Botón para reiniciar el juego -->
     {
       gameOver && (
-        <form method="POST">
-          <button type="submit" name="reset" value="true" class="reset-button">
-            Jugar de nuevo
-          </button>
+        <form method="POST"> 
+          <button type="submit" name="reset" value="true" class="reset-button"> 
+            Jugar de nuevo 
+          </button> 
         </form>
       )
     }
   </div>
 </Layout>
 
-<style>
-  .game-container {
+<style> /* CSS para el diseño del juego */
+  .game-container { 
     font-family: Inter, Roboto, "Helvetica Neue", "Arial Nova", "Nimbus Sans",
       Arial, sans-serif;
     text-align: center;
