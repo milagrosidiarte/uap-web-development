@@ -1,0 +1,185 @@
+---
+import Layout from '../layouts/Layout.astro'; // Importa el layout que se usará para la página
+import { tareas } from "../lib/tareas.ts"; // Importa la lista de tareas desde el archivo tareas.ts
+
+//const todasLasTareas = Astro.locals.tareas ?? [];
+const todasLasTareas = tareas ?? [];
+// Se obtiene el filtro de la URL, por defecto es "todas"
+const filtro = Astro.url.searchParams.get("filtro") ?? "todas";
+
+// Se filtran las tareas según el filtro seleccionado
+let tareasFiltradas = todasLasTareas
+  .map((t, index) => ({ ...t, id: index })); // añade índice original
+
+if (filtro === "completadas" || filtro === "completed") { // Filtra las tareas completadas
+  tareasFiltradas = tareasFiltradas.filter(t => t.completada);
+} else if (filtro === "incompletas" || filtro === "incomplete") { // Filtra las tareas incompletas
+  tareasFiltradas = tareasFiltradas.filter(t => !t.completada); //
+}
+
+---
+
+<Layout>
+  <div class="container">
+    <h1><span class="highlight">TO</span>DO</h1>
+
+    <!-- Filtros  -->
+    <form method="GET" class="filter-buttons">
+      <button class="filter-btn {filtro === 'todas' || filtro === 'all' ? 'active' : ''}" name="filtro" value="todas">All</button>
+      <button class="filter-btn {filtro === 'incompletas' || filtro === 'incomplete' ? 'active' : ''}" name="filtro" value="incompletas">Incomplete</button>
+      <button class="filter-btn {filtro === 'completadas' || filtro === 'completed' ? 'active' : ''}" name="filtro" value="completadas">Completed</button>
+    </form>
+
+    <!-- Agregar tarea -->
+    <form method="POST" action="/api/agregar" class="input-section">
+      <input type="text" name="texto" placeholder="What do you need to do?" required>
+      <button type="submit" class="add-btn">ADD</button>
+    </form>
+
+    <!-- Lista de tareas -->
+    <div class="task-list">
+		{tareasFiltradas.map((tarea) => (
+			<div class="task">
+			  <form method="POST" action={`/api/toggle/${tarea.id}`}>
+				<button type="submit" class="check-btn">{tarea.completada ? "✓" : "○"}</button>
+			  </form>
+			  <div class={`task-text ${tarea.completada ? 'completada' : ''}`}>{tarea.texto}</div>
+			  <form method="POST" action="/api/eliminar">
+				<input type="hidden" name="id" value={tarea.id} />
+				<button type="submit" class="check-btn">✕</button>
+			  </form>
+			</div>
+		  ))}
+    </div>
+
+    <!-- Botón para limpiar completadas -->
+    <form method="POST" action="/api/limpiar">
+      <button type="submit" class="clear-completed">Clear Completed</button>
+    </form>
+  </div>
+</Layout>
+
+<style is:global>
+  /* Aquí va todo tu CSS sin cambios */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f5f1eb;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+  }
+
+  .container {
+    width: 40%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 50px;
+  }
+
+  h1 {
+    font-size: 32px;
+    color: #333;
+  }
+
+  .highlight {
+    color: #f5bee4;
+  }
+
+  .input-section {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .input-section input {
+    width: 70%;
+    padding: 10px;
+    border: 1px solid lightgray;
+    border-radius: 20px;
+    outline: none;
+    font-size: 16px;
+  }
+
+  .add-btn {
+    background-color: #b7e4f9;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .check-btn {
+    background-color: #f5bee4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .task-list {
+    text-align: center;
+  }
+
+  .task {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f9f9f9;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 10px;
+  }
+
+  .task-text {
+    flex: 1;
+    margin-left: 10px;
+    font-size: 16px;
+  }
+
+  .clear-completed {
+    color: rgb(168, 199, 157);
+    text-align: center;
+    margin-top: 10px;
+    cursor: pointer;
+  }
+
+  .filter-buttons {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0;
+    gap: 10px;
+  }
+
+  .filter-btn {
+    background-color: #faf6f6;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .filter-btn:hover {
+    background-color: #faf6f6;
+  }
+
+  .filter-btn.active {
+    background-color: #a5e8a5;
+    color: white;
+  }
+
+  .task-text.completada {
+	text-decoration: line-through;
+	color: #ccc;
+  }
+</style>

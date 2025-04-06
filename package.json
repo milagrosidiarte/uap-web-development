@@ -1,0 +1,14 @@
+{
+  "name": "c-users-idiar-onedrive---uap-edu-ar-3er-ano-programacion-iii-todoastro",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^5.6.0"
+  }
+}
