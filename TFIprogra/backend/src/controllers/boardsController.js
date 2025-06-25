@@ -34,6 +34,50 @@ const listarTableros = (req, res) => {
   res.json(boards);
 };
 
-module.exports = { crearTablero, listarTableros };
+const compartirTablero = (req, res) => {
+  const ownerId = req.user.id;
+  const { boardId } = req.params;
+  const { username, role } = req.body;
+
+  if (!['editor', 'viewer'].includes(role)) {
+    return res.status(400).json({ error: 'Rol inválido (usar editor o viewer)' });
+  }
+
+  // Verificar que el tablero pertenece al owner actual
+  const tablero = db.prepare(`
+    SELECT * FROM boards WHERE id = ? AND owner_id = ?
+  `).get(boardId, ownerId);
+
+  if (!tablero) {
+    return res.status(403).json({ error: 'No sos el dueño del tablero' });
+  }
+
+  // Buscar al usuario por username
+  const usuario = db.prepare(`
+    SELECT * FROM users WHERE username = ?
+  `).get(username);
+
+  if (!usuario) {
+    return res.status(404).json({ error: 'Usuario no encontrado' });
+  }
+
+  // Evitar duplicar permisos
+  const yaExiste = db.prepare(`
+    SELECT * FROM permissions WHERE user_id = ? AND board_id = ?
+  `).get(usuario.id, boardId);
+
+  if (yaExiste) {
+    return res.status(400).json({ error: 'Este usuario ya tiene acceso' });
+  }
+
+  // Insertar permiso
+  db.prepare(`
+    INSERT INTO permissions (user_id, board_id, role) VALUES (?, ?, ?)
+  `).run(usuario.id, boardId, role);
+
+  res.json({ message: 'Tablero compartido con éxito', sharedWith: username, role });
+};
+
+module.exports = { crearTablero, listarTableros, compartirTablero };
 // Este controlador maneja la creación y listado de tableros.
 // Utiliza la base de datos para insertar nuevos tableros y recuperar los existentes,
