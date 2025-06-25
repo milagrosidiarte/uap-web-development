@@ -29,7 +29,7 @@ const actualizarConfiguraciones = (req, res) => {
 
   db.prepare(`
     INSERT INTO user_settings (user_id, auto_refresh_interval, mostrar_mayusculas, modo_oscuro)
-    VALUES (?, ?, ?)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(user_id) DO UPDATE SET
       auto_refresh_interval = excluded.auto_refresh_interval,
       mostrar_mayusculas = excluded.mostrar_mayusculas,
