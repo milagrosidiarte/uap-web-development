@@ -2,6 +2,8 @@ import { createRootRoute, createRoute, createRouter } from '@tanstack/react-rout
 import App from './App'
 import LoginPage from './pages/Login'
 import HomePage from './pages/Home'
+import RegisterPage from './pages/Register'
+import BoardsPage from './pages/Boards'
 
 const rootRoute = createRootRoute({
   component: App,
@@ -19,9 +21,24 @@ const loginRoute = createRoute({
   component: LoginPage,
 })
 
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
+})
+
+const boardsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/boards',
+  component: BoardsPage,
+})
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   loginRoute,
+  registerRoute, 
+  boardsRoute,
+  // Aquí es donde defines la ruta de registro
   // agregarás register y otras rutas luego
 ])
 
