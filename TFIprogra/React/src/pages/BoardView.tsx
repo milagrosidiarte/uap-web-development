@@ -4,6 +4,7 @@ import { useToggleTask } from '../hooks/useToggleTask'
 import NewTaskForm from '../components/NewTaskForm'
 import { useDeleteTask } from '../hooks/useDeleteTask'
 import { useTaskFilterStore } from '../store/useTaskFilterStore'
+import { useDeleteCompletedTasks } from '../hooks/useDeleteCompletedTasks'
 
 
 export default function BoardView() {
@@ -12,6 +13,7 @@ export default function BoardView() {
   const toggle = useToggleTask(boardId)
   const remove = useDeleteTask(boardId)
   const { completed, search, setCompleted, setSearch } = useTaskFilterStore()
+  const deleteCompleted = useDeleteCompletedTasks(boardId)
 
   if (isLoading) return <p className="p-4">Cargando tareas...</p>
   if (isError) return <p className="p-4 text-red-600">Error: {(error as Error).message}</p>
@@ -78,6 +80,17 @@ export default function BoardView() {
       </ul>
 
       <NewTaskForm />
+      <button
+        onClick={() => {
+          if (confirm('¿Eliminar todas las tareas completadas?')) {
+            deleteCompleted.mutate()
+          }
+        }}
+        className="mt-6 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+      >
+        🗑 Eliminar tareas completadas
+    </button>
+
     </div>
   )
 

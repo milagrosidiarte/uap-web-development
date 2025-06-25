@@ -41,3 +41,17 @@ export async function deleteTask(taskId: string) {
 
   return await res.json()
 }
+
+export async function deleteCompletedTasks(boardId: string) {
+  const res = await fetch(`http://localhost:3000/api/boards/${boardId}/tasks/completed`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || 'Error al eliminar tareas completadas')
+  }
+
+  return await res.json()
+}
