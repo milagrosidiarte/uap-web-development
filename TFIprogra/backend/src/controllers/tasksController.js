@@ -62,9 +62,12 @@ const listarTareas = (req, res) => {
 
   query += ' ORDER BY created_at DESC';
 
-  const tasks = db.prepare(query).all(...params);
-
-  res.json(tasks);
+  try {
+    const tasks = db.prepare(query).all(...params);
+    res.json(tasks); // esta línea debe existir SIEMPRE
+  } catch (err) {
+    res.status(500).json({ error: 'Error al obtener tareas', details: err.message });
+  }
 };
 
 // Este controlador maneja las operaciones CRUD para las tareas dentro de un tablero específico.
