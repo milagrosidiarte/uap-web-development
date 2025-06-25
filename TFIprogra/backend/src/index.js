@@ -3,6 +3,7 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const initDatabase = require('./db/initDB');
 const authRoutes = require('./routes/auth');
+const boardsRoutes = require('./routes/boards');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,6 +18,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use('/api/boards', boardsRoutes);
 app.use('/api', authRoutes);
 
 
