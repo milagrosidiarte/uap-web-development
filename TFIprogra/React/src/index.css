@@ -1,5 +1,5 @@
 @import "tailwindcss";
 
 body {
-  background-color: #f3ebe4; /* color de fondo igual al de la imagen */
+  font-family: sans-serif;
 }
