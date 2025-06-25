@@ -111,7 +111,32 @@ const toggleTarea = (req, res) => {
 };
 // asegurando que solo los usuarios con permisos adecuados puedan interactuar con las tareas.
 
-module.exports = { crearTarea, listarTareas, editarTarea, toggleTarea };
+const eliminarTarea = (req, res) => {
+  const userId = req.user.id;
+  const { taskId } = req.params;
+
+  const tarea = db.prepare(`
+    SELECT id, board_id FROM tasks WHERE id = ?
+  `).get(taskId);
+
+  if (!tarea) return res.status(404).json({ error: 'Tarea no encontrada' });
+
+  const permiso = db.prepare(`
+    SELECT role FROM permissions WHERE user_id = ? AND board_id = ?
+  `).get(userId, tarea.board_id);
+
+  if (!permiso || (permiso.role !== 'owner' && permiso.role !== 'editor')) {
+    return res.status(403).json({ error: 'Sin permisos para eliminar esta tarea' });
+  }
+
+  db.prepare(`DELETE FROM tasks WHERE id = ?`).run(taskId);
+
+  res.json({ message: 'Tarea eliminada' });
+};
+// asegurando que solo los usuarios con permisos adecuados puedan interactuar con las tareas.
+// Además, se proporciona una función para eliminar tareas, que también verifica los permisos del usuario.
+
+module.exports = { crearTarea, listarTareas, editarTarea, toggleTarea, eliminarTarea };
 
 // de autenticación pueden acceder a estas rutas.
 // Las tareas se crean y listan dentro del contexto de un tablero específico, asegurando que

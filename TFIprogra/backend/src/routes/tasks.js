@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router({ mergeParams: true }); // para acceder a :boardId
 const checkAuth = require('../middlewares/checkAuth');
-const { crearTarea, listarTareas, editarTarea, toggleTarea } = require('../controllers/tasksController');
+const { crearTarea, listarTareas, editarTarea, toggleTarea, eliminarTarea } = require('../controllers/tasksController');
 
 router.use(checkAuth); // proteger todo
 
@@ -9,6 +9,8 @@ router.post('/:boardId/tasks', crearTarea);
 router.get('/:boardId/tasks', listarTareas);
 router.put('/tasks/:taskId', editarTarea);
 router.patch('/tasks/:taskId/toggle', toggleTarea);
+router.delete('/tasks/:taskId', eliminarTarea);
+
 
 module.exports = router;
 // Este archivo define las rutas para manejar las tareas dentro de un tablero específico.
