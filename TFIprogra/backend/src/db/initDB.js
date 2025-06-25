@@ -59,7 +59,6 @@ function initDatabase() {
   try {
     db.prepare(`ALTER TABLE user_settings ADD COLUMN modo_oscuro INTEGER DEFAULT 0`).run();
   } catch (e) {
-    // Ignorar error si la columna ya existe
   }
 
   console.log("✅ Base de datos inicializada");

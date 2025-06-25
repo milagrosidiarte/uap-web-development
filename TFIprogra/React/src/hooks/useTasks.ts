@@ -1,10 +1,17 @@
 import { useQuery } from '@tanstack/react-query'
+import { useTaskFilterStore } from '../store/useTaskFilterStore'
 
 export function useTasks(boardId: string) {
+  const { completed, search } = useTaskFilterStore()
+
   return useQuery({
-    queryKey: ['tasks', boardId],
+    queryKey: ['tasks', boardId, completed, search],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:3000/api/boards/${boardId}/tasks`, {
+      const params = new URLSearchParams()
+      if (completed !== 'all') params.append('completed', completed)
+      if (search.trim()) params.append('q', search)
+
+      const res = await fetch(`http://localhost:3000/api/boards/${boardId}/tasks?${params.toString()}`, {
         credentials: 'include',
       })
 
@@ -13,9 +20,8 @@ export function useTasks(boardId: string) {
         throw new Error(error || 'Error al obtener tareas')
       }
 
-      const data = await res.json()
-      return data // debe ser un array de tareas
+      return await res.json()
     },
-    enabled: !!boardId, // sólo corre si hay boardId
+    enabled: !!boardId,
   })
 }

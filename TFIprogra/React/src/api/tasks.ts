@@ -15,7 +15,7 @@ export async function createTask(boardId: string, content: string) {
 }
 
 export async function toggleTask(taskId: string) {
-  const res = await fetch(`http://localhost:3000/api/tasks/${taskId}/toggle`, {
+  const res = await fetch(`http://localhost:3000/api/boards/tasks/${taskId}/toggle`, {
     method: 'PATCH',
     credentials: 'include',
   })
@@ -28,3 +28,16 @@ export async function toggleTask(taskId: string) {
   return await res.json()
 }
 
+export async function deleteTask(taskId: string) {
+  const res = await fetch(`http://localhost:3000/api/boards/tasks/${taskId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    throw new Error(error || 'Error al eliminar tarea')
+  }
+
+  return await res.json()
+}

@@ -24,7 +24,6 @@ app.use('/api/boards', boardsRoutes);
 app.use('/api', authRoutes);
 app.use('/api/boards', tasksRoutes); // se asocia con /api/boards/:boardId/tasks
 app.use('/api/settings', settingsRoutes);
-//app.use('/api/tasks', tasksRoutes); // para tareas sin boardId
 
 // Ruta de prueba
 app.get('/api/ping', (req, res) => {
