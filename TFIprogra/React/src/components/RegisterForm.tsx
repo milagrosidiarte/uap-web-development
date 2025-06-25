@@ -3,7 +3,7 @@ import { useRegister } from '../hooks/useRegister'
 import { useNavigate } from '@tanstack/react-router'
 
 export function RegisterForm() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const navigate = useNavigate()
 
@@ -12,14 +12,10 @@ export function RegisterForm() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     register(
-      { email, password },
+      { username, password },
       {
-        onSuccess: () => {
-          navigate({ to: '/boards' })
-        },
-        onError: (err) => {
-          alert((err as Error).message)
-        }
+        onSuccess: () => navigate({ to: '/login' }),
+        onError: (err) => alert((err as Error).message),
       }
     )
   }
@@ -27,31 +23,33 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4">
       <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="Email"
-        className="border rounded p-2"
+        type="text"
+        name="username"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        placeholder="Nombre de usuario"
+        className="border p-2 rounded"
         required
       />
       <input
         type="password"
+        name="password"
         value={password}
         onChange={e => setPassword(e.target.value)}
         placeholder="Contraseña"
-        className="border rounded p-2"
+        className="border p-2 rounded"
         required
       />
       <button
         type="submit"
         disabled={isPending}
-        className="bg-green-600 text-white py-2 rounded"
+        className="bg-green-600 text-white rounded p-2"
       >
         {isPending ? 'Registrando...' : 'Registrarse'}
       </button>
 
       {isError && <p className="text-red-600 text-sm">{(error as Error).message}</p>}
-      {isSuccess && <p className="text-green-600 text-sm">¡Usuario registrado correctamente!</p>}
+      {isSuccess && <p className="text-green-600 text-sm">¡Registrado correctamente!</p>}
     </form>
   )
 }

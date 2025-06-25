@@ -9,8 +9,8 @@ export function useAuth() {
   const user = useAuthStore(state => state.user)
 
   const { mutate: login, isPending, isError, error } = useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const token = await loginRequest(email, password)
+    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+      const token = await loginRequest(username, password)
       loginToStore(token)
     },
   })

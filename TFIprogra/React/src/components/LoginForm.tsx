@@ -3,7 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useNavigate } from '@tanstack/react-router'
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
 
   const navigate = useNavigate()
@@ -11,7 +11,7 @@ export default function LoginForm() {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    login({ email, password }, {
+    login({ username, password }, {
       onSuccess: () => {
         navigate({ to: '/boards' })
       },
@@ -24,10 +24,10 @@ export default function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4">
       <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="Email"
+        type="username"
+        value={username}
+        onChange={e => setUsername(e.target.value)}
+        placeholder="Username"
         className="border rounded p-2"
         required
       />

@@ -23,9 +23,8 @@ export function useTasks( page: number, limit = 5) {
     queryKey,
     queryFn: async () => {
       await new Promise((resolve) => setTimeout(resolve, 500)); // Simulate a delay
-      const response = await fetch(`${BASE_URL}/filter?activeBoardId=${activeBoardId}&filter=${filter}&page=${page}&limit=${limit}`, {
-        method: "GET",
-        credentials: "include",
+      const response = await fetch(`${BASE_URL}/boards/${activeBoardId}/tasks?filter=${filter}&page=${page}&limit=${limit}`, {
+        credentials: 'include',
         headers: {
           "Content-Type": "application/json",
         },
