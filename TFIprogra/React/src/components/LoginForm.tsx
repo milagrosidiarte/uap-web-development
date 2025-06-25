@@ -1,40 +1,53 @@
-import type { FormEvent } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useState } from 'react'
+import { useAuth } from '../hooks/useAuth'
+import { useNavigate } from '@tanstack/react-router'
 
-export function LoginForm() {
-  const { login, token } = useAuth();
+export default function LoginForm() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const data = {
-      email: formData.get("email")!.toString(),
-      password: formData.get("password")!.toString(),
-    };
-    login(data);
-  }
+  const navigate = useNavigate()
+  const { login, isPending, isError, error } = useAuth()
 
-  if (token) {
-    return <div>Logged in</div>;
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    login({ email, password }, {
+      onSuccess: () => {
+        navigate({ to: '/boards' })
+      },
+      onError: (err) => {
+        alert((err as Error).message)
+      }
+    })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4">
       <input
-        name="email"
         type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
         placeholder="Email"
-        className="border border-gray-300 rounded-md p-2"
+        className="border rounded p-2"
+        required
       />
       <input
-        name="password"
         type="password"
-        placeholder="Password"
-        className="border border-gray-300 rounded-md p-2"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="Contraseña"
+        className="border rounded p-2"
+        required
       />
-      <button type="submit" className="bg-blue-500 text-white rounded-md p-2">
-        Login
+      <button
+        type="submit"
+        disabled={isPending}
+        className="bg-blue-500 text-white py-2 rounded"
+      >
+        {isPending ? 'Ingresando...' : 'Iniciar sesión'}
       </button>
+
+      {isError && <p className="text-red-600 text-sm">{(error as Error).message}</p>}
     </form>
-  );
+  )
 }

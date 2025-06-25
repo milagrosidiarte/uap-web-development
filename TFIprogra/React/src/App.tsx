@@ -1,31 +1,32 @@
-import { ToastContainer } from "./components/ToastContainer";
-import { Link, Outlet } from "@tanstack/react-router";
-
+import { ToastContainer } from "./components/ToastContainer"
+import Navbar from "./components/Navbar"
+import { BoardsNav } from "./components/BoardsNav"
+import { Outlet } from "@tanstack/react-router"
+import { useAuthStore } from "./store/authStore"
 
 export function App() {
-  // const filter = useFilterStore((state) => state.filter);
-  // const setFilter = useFilterStore((state) => state.setFilter);
-  // const [page, setPage] = useState(1);
-  // const [taskEditing, setTaskEditing] = useState<Task | null>(null);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated)
 
-  // useEffect(() => {
-  //   setPage(1); // Reset page to 1 when filter changes
-  // }, [filter]);
-
-  
   return (
     <>
       <ToastContainer />
-      <header>
-      {/* Título principal con un diseño simple donde "TO" y "DO" están separados para dar énfasis */}
-        <h1 className="font-bold text-center text-[32px] text-[#333] my-4"><span className="text-[#e08e36]">TO</span>DO</h1>
-      </header>
-      
-      <Outlet />
 
-      
+      <header>
+        <h1 className="font-bold text-center text-[32px] text-[#333] my-4">
+          <span className="text-[#e08e36]">TO</span>DO
+        </h1>
+      </header>
+
+      {isAuthenticated && (
+        <>
+          <Navbar />
+          <BoardsNav />
+        </>
+      )}
+
+      <Outlet />
     </>
-  );
+  )
 }
 
-export default App;
+export default App

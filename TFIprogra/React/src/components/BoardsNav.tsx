@@ -28,7 +28,7 @@ export function BoardsNav() {
           )}
         </Link>
       ))}
-      <div className='flex items-center gat-4 ml-auto'>
+      <div className='flex items-center gap-4 ml-auto'>
         <NewBoardForm />
       </div>
       

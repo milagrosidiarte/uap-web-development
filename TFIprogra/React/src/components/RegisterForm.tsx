@@ -1,45 +1,57 @@
-import type { FormEvent } from "react";
-import { useRegister } from "../hooks/useRegister";
+import { useState } from 'react'
+import { useRegister } from '../hooks/useRegister'
+import { useNavigate } from '@tanstack/react-router'
 
 export function RegisterForm() {
-  const { register, isPending, isSuccess, isError, error } = useRegister();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const navigate = useNavigate()
 
-  function handleSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const { mutate: register, isPending, isError, error, isSuccess } = useRegister()
 
-    const formData = new FormData(e.target as HTMLFormElement);
-    const data = {
-      email: formData.get("email")!.toString(),
-      password: formData.get("password")!.toString(),
-    };
-
-    register(data);
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    register(
+      { email, password },
+      {
+        onSuccess: () => {
+          navigate({ to: '/boards' })
+        },
+        onError: (err) => {
+          alert((err as Error).message)
+        }
+      }
+    )
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2 mb-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3 p-4">
       <input
-        name="email"
         type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
         placeholder="Email"
-        className="border border-gray-300 rounded-md p-2"
+        className="border rounded p-2"
+        required
       />
       <input
-        name="password"
         type="password"
-        placeholder="Password"
-        className="border border-gray-300 rounded-md p-2"
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="Contraseña"
+        className="border rounded p-2"
+        required
       />
       <button
         type="submit"
-        className="bg-green-500 text-white rounded-md p-2"
         disabled={isPending}
+        className="bg-green-600 text-white py-2 rounded"
       >
-        {isPending ? "Registering..." : "Register"}
+        {isPending ? 'Registrando...' : 'Registrarse'}
       </button>
 
-      {isSuccess && <p className="text-green-600">User registered successfully!</p>}
-      {isError && <p className="text-red-600">{(error as Error).message}</p>}
+      {isError && <p className="text-red-600 text-sm">{(error as Error).message}</p>}
+      {isSuccess && <p className="text-green-600 text-sm">¡Usuario registrado correctamente!</p>}
     </form>
-  );
+  )
 }

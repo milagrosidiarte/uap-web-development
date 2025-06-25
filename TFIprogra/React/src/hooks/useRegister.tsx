@@ -1,37 +1,16 @@
-import { useMutation } from "@tanstack/react-query";
-import { BASE_URL } from "./useTasks"; // Asegurate que este path sea correcto
-import { showToast } from "../utils/showToast";
-
-type RegisterInput = {
-  email: string;
-  password: string;
-};
+import { useMutation } from '@tanstack/react-query'
+import { register as registerRequest } from '../api/auth'
+import { useAuthStore } from '../store/authStore'
 
 export function useRegister() {
-  return useMutation({
-    mutationKey: ["register"],
-    mutationFn: async ({ email, password }: RegisterInput) => {
-      const response = await fetch(`${BASE_URL}/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: "include", // Importante si el backend setea cookies (aunque en register puede no ser necesario)
-      });
+  const loginToStore = useAuthStore(state => state.login)
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Failed to register");
-      }
+  const mutation = useMutation({
+    mutationFn: async ({ email, password }: { email: string; password: string }) => {
+      const token = await registerRequest(email, password)
+      loginToStore(token)
+    },
+  })
 
-      return response.json(); // Devuelve el nuevo usuario, o lo que el backend devuelva
-    },
-    onSuccess: () => {
-      showToast("Registration successful!", "success");
-    },
-    onError: (error) => {
-      showToast(`Registration failed: ${error.message}`, "error");
-    },
-  });
+  return mutation
 }
