@@ -1,5 +1,6 @@
 import { useBoards } from '../hooks/useBoards'
 import NewBoardForm from '../components/NewBoardForm'
+import { Link } from '@tanstack/react-router'
 
 export default function BoardsPage() {
   const { data, isLoading, isError, error } = useBoards()
@@ -12,8 +13,14 @@ export default function BoardsPage() {
       <h2 className="text-xl font-bold mb-4">Tus tableros</h2>
       <ul className="flex flex-col gap-2">
         {data.map((board: { id: string; name: string }) => (
-          <li key={board.id} className="p-2 border rounded bg-white shadow">
-            {board.name}
+          <li key={board.id}>
+            <Link
+              to="/boards/$boardId"
+              params={{ boardId: board.id }}
+              className="block p-2 border rounded bg-white shadow hover:bg-gray-100"
+            >
+              {board.name}
+            </Link>
           </li>
         ))}
       </ul>
