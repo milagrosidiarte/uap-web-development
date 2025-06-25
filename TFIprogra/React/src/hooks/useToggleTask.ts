@@ -6,7 +6,7 @@ export function useToggleTask(boardId: string) {
 
   return useMutation({
     mutationFn: async (taskId: string) => {
-      return await toggleTask(boardId, taskId)
+      return await toggleTask(taskId)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks', boardId] })
