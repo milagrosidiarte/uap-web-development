@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const initDatabase = require('./db/initDB');
 const authRoutes = require('./routes/auth');
 const boardsRoutes = require('./routes/boards');
+const tasksRoutes = require('./routes/tasks');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,7 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/api/boards', boardsRoutes);
 app.use('/api', authRoutes);
-
+app.use('/api/boards', tasksRoutes); // se asocia con /api/boards/:boardId/tasks
 
 // Ruta de prueba
 app.get('/api/ping', (req, res) => {
