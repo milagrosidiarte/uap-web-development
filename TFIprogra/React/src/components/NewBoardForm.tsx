@@ -3,7 +3,7 @@ import { useCreateBoard } from '../hooks/useCreateBoard'
 
 export default function NewBoardForm() {
   const [name, setName] = useState('')
-  const { mutate, isPending, isError, error } = useCreateBoard()
+  const { mutate, isError, error } = useCreateBoard()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
