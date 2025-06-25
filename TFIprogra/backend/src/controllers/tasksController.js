@@ -33,7 +33,7 @@ const crearTarea = (req, res) => {
 const listarTareas = (req, res) => {
   const userId = req.user.id;
   const { boardId } = req.params;
-  const { completed } = req.query;
+  const { completed, q } = req.query;
 
   const permiso = db.prepare(`
     SELECT role FROM permissions WHERE user_id = ? AND board_id = ?
@@ -55,12 +55,18 @@ const listarTareas = (req, res) => {
     params.push(parseInt(completed));
   }
 
+  if (q && q.trim() !== '') {
+    query += ' AND content LIKE ?';
+    params.push(`%${q}%`);
+  }
+
   query += ' ORDER BY created_at DESC';
 
   const tasks = db.prepare(query).all(...params);
 
   res.json(tasks);
 };
+
 // Este controlador maneja las operaciones CRUD para las tareas dentro de un tablero específico.
 // Se asegura de que solo los usuarios autenticados y con los permisos adecuados puedan interactuar con
 
