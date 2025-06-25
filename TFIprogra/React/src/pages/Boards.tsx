@@ -1,4 +1,5 @@
 import { useBoards } from '../hooks/useBoards'
+import NewBoardForm from '../components/NewBoardForm'
 
 export default function BoardsPage() {
   const { data, isLoading, isError, error } = useBoards()
@@ -16,6 +17,7 @@ export default function BoardsPage() {
           </li>
         ))}
       </ul>
+      <NewBoardForm />
     </div>
   )
 }
