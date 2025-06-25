@@ -14,8 +14,8 @@ export async function createTask(boardId: string, content: string) {
   return await res.json()
 }
 
-export async function toggleTask(boardId: string, taskId: string) {
-  const res = await fetch(`http://localhost:3000/api/boards/${boardId}/tasks/${taskId}/toggle`, {
+export async function toggleTask(taskId: string) {
+  const res = await fetch(`http://localhost:3000/api/tasks/${taskId}/toggle`, {
     method: 'PATCH',
     credentials: 'include',
   })
