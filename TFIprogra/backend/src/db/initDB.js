@@ -45,6 +45,17 @@ function initDatabase() {
     );
   `).run();
 
+  // Tabla de configuraciones por usuario
+  db.prepare(`
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id INTEGER PRIMARY KEY,
+      auto_refresh_interval INTEGER DEFAULT 30,
+      mostrar_mayusculas INTEGER DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+  `).run();
+
+
   console.log("✅ Base de datos inicializada");
 }
 
