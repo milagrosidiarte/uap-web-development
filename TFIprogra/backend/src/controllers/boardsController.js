@@ -78,6 +78,30 @@ const compartirTablero = (req, res) => {
   res.json({ message: 'Tablero compartido con éxito', sharedWith: username, role });
 };
 
-module.exports = { crearTablero, listarTableros, compartirTablero };
+const obtenerUsuariosDelTablero = (req, res) => {
+  const boardId = req.params.boardId;
+  const userId = req.user.id;
+
+  // Verificar que el usuario tenga acceso
+  const permiso = db.prepare(`
+    SELECT role FROM permissions WHERE user_id = ? AND board_id = ?
+  `).get(userId, boardId);
+
+  if (!permiso) {
+    return res.status(403).json({ error: 'No tenés acceso a este tablero' });
+  }
+
+  // Obtener los usuarios con sus roles
+  const usuarios = db.prepare(`
+    SELECT u.username, p.role
+    FROM permissions p
+    JOIN users u ON p.user_id = u.id
+    WHERE p.board_id = ?
+  `).all(boardId);
+
+  res.json(usuarios);
+};
+
+module.exports = { crearTablero, listarTableros, compartirTablero, obtenerUsuariosDelTablero };
 // Este controlador maneja la creación y listado de tableros.
 // Utiliza la base de datos para insertar nuevos tableros y recuperar los existentes,
