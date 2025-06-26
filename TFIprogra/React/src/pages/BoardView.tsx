@@ -129,7 +129,7 @@ export default function BoardView() {
 
       {/* Enlace a configuración */}
       <div className="mt-8 text-center">
-        <Link to="/boards/settings" >
+        <Link to="/settings" className="mt-6 inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
           ⚙ Configuración
         </Link>
       </div>

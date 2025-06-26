@@ -42,7 +42,7 @@ const boardViewRoute = createRoute({
 })
 
 export const boardSettingsRoute = createRoute({
-  getParentRoute: () => boardsRoute,
+  getParentRoute: () => rootRoute,
   path: '/settings',
   component: BoardSettingsPage,
 })
