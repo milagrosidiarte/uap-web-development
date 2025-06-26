@@ -14,6 +14,7 @@ export default function BoardView() {
   const remove = useDeleteTask(boardId)
   const { completed, search, setCompleted, setSearch } = useTaskFilterStore()
   const deleteCompleted = useDeleteCompletedTasks(boardId)
+  const { page, setPage } = useTaskFilterStore()
 
   if (isLoading) return <p className="p-4">Cargando tareas...</p>
   if (isError) return <p className="p-4 text-red-600">Error: {(error as Error).message}</p>
@@ -90,6 +91,22 @@ export default function BoardView() {
       >
         🗑 Eliminar tareas completadas
     </button>
+      <div className="flex justify-center items-center gap-4 mt-6">
+        <button
+          onClick={() => setPage(Math.max(1, page - 1))}
+          disabled={page === 1}
+          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+        >
+          ⬅ Anterior
+        </button>
+        <span>Página {page}</span>
+        <button
+          onClick={() => setPage(page + 1)}
+          className="px-3 py-1 bg-gray-200 rounded"
+        >
+          Siguiente ➡
+        </button>
+      </div>
 
     </div>
   )
