@@ -10,6 +10,8 @@ import { Link } from '@tanstack/react-router'
 import CompartirTableroForm from '../components/CompartirTableroForm'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'react-hot-toast'
+import { useTaskEditStore } from '../store/useTaskEditStore'
+
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -96,27 +98,35 @@ const handleEliminarTablero = async () => {
       <ul className="space-y-2">
         {tasks.map((task: { id: string; content: string; completed: boolean }) => (
           <li key={task.id} className="border p-2 rounded bg-white shadow flex justify-between items-center">
-            <span>
+            <span className="flex items-center gap-2">
               <button
                 onClick={() => toggle.mutate(task.id)}
-                className="mr-2 text-lg"
+                className="text-lg"
                 title="Cambiar estado"
               >
                 {task.completed ? '✅' : '⬜️'}
               </button>
               {uppercase ? task.content.toUpperCase() : task.content}
-
             </span>
-            <button
-              onClick={() => remove.mutate(task.id)}
-              className="text-red-600 font-bold text-lg"
-              title="Eliminar tarea"
-            >
-              🗑
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => useTaskEditStore.getState().setTareaEditando(task)}
+                className="text-blue-600 text-lg"
+                title="Editar tarea"
+              >
+                🖉
+              </button>
+              <button
+                onClick={() => remove.mutate(task.id)}
+                className="text-red-600 font-bold text-lg"
+                title="Eliminar tarea"
+              >
+                🗑
+              </button>
+            </div>
           </li>
         ))}
-      </ul>
+        </ul>
 
       <NewTaskForm />
 

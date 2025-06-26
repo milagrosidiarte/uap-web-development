@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { useParams } from '@tanstack/react-router'
+import { toast } from 'react-hot-toast'
 
 export default function CompartirTableroForm() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
   const [username, setUsername] = useState('')
   const [role, setRole] = useState<'editor' | 'viewer'>('viewer')
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
 	e.preventDefault()
-	setMessage('')
-	setError('')
 
 	try {
 	  const res = await fetch(`http://localhost:3000/api/boards/${boardId}/share`, {
@@ -29,11 +26,11 @@ export default function CompartirTableroForm() {
 		throw new Error(data.error || 'Error al compartir el tablero')
 	  }
 
-	  setMessage(`Tablero compartido con ${username} como ${role}`)
+	  toast.success(`Tablero compartido con ${username} como ${role}`)
 	  setUsername('')
 	  setRole('viewer')
 	} catch (err) {
-	  setError((err as Error).message)
+	  toast.error((err as Error).message)
 	}
   }
 
@@ -70,9 +67,6 @@ export default function CompartirTableroForm() {
 	  >
 		Compartir
 	  </button>
-
-	  {message && <p className="text-green-600">{message}</p>}
-	  {error && <p className="text-red-600">{error}</p>}
 	</form>
   )
 }
