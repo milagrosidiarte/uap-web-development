@@ -78,6 +78,26 @@ const compartirTablero = (req, res) => {
   res.json({ message: 'Tablero compartido con éxito', sharedWith: username, role });
 };
 
+const eliminarTablero = (req, res) => {
+  const { boardId } = req.params;
+  const userId = req.user.id;
+
+  // Verificar que el usuario es el dueño
+  const board = db.prepare('SELECT * FROM boards WHERE id = ? AND owner_id = ?')
+    .get(boardId, userId);
+
+  if (!board) {
+    return res.status(403).json({ error: 'No sos el dueño del tablero' });
+  }
+
+  // Eliminar permisos, tareas y tablero
+  db.prepare('DELETE FROM permissions WHERE board_id = ?').run(boardId);
+  db.prepare('DELETE FROM tasks WHERE board_id = ?').run(boardId);
+  db.prepare('DELETE FROM boards WHERE id = ?').run(boardId);
+
+  res.json({ message: 'Tablero eliminado' });
+};
+
 module.exports = { crearTablero, listarTableros, compartirTablero };
 // Este controlador maneja la creación y listado de tableros.
 // Utiliza la base de datos para insertar nuevos tableros y recuperar los existentes,

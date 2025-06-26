@@ -8,7 +8,8 @@ import NewTaskForm from '../components/NewTaskForm'
 import { useConfigStore } from '../store/configStore'
 import { Link } from '@tanstack/react-router'
 import CompartirTableroForm from '../components/CompartirTableroForm'
-
+import { useNavigate } from '@tanstack/react-router'
+import { toast } from 'react-hot-toast'
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -29,6 +30,28 @@ export default function BoardView() {
     setSearch,
     setPage,
   } = useTaskFilterStore()
+
+  const navigate = useNavigate()
+
+const handleEliminarTablero = async () => {
+  if (!confirm('¿Estás seguro de que querés eliminar este tablero? Esta acción no se puede deshacer.')) return
+
+  try {
+    const res = await fetch(`http://localhost:3000/api/boards/${boardId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Error al eliminar tablero')
+
+    toast.success('Tablero eliminado correctamente')
+    navigate({ to: '/boards' })
+  } catch (err) {
+    toast.error((err as Error).message)
+  }
+}
+
 
   if (isLoading) return <p className="p-4">Cargando tareas...</p>
   if (isError) return <p className="p-4 text-red-600">Error: {(error as Error).message}</p>
@@ -137,6 +160,16 @@ export default function BoardView() {
 
       {/* Compartir tablero */}
       <CompartirTableroForm />
+
+      {/* Eliminar tablero */}
+      <div className="mt-6 text-center">
+        <button
+          onClick={handleEliminarTablero}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+        >
+          🗑 Eliminar tablero
+        </button>
+      </div>
 
     </div>
   )
