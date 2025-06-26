@@ -5,6 +5,7 @@ import { useDeleteTask } from '../hooks/useDeleteTask'
 import { useDeleteCompletedTasks } from '../hooks/useDeleteCompletedTasks'
 import { useTaskFilterStore } from '../store/useTaskFilterStore'
 import NewTaskForm from '../components/NewTaskForm'
+import { useConfigStore } from '../store/configStore'
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -12,7 +13,7 @@ export default function BoardView() {
   const tasks = data?.tasks ?? []
   const total = data?.total ?? 0
   const totalPages = Math.ceil(total / 5)
-
+  const { uppercase } = useConfigStore()
   const toggle = useToggleTask(boardId)
   const remove = useDeleteTask(boardId)
   const deleteCompleted = useDeleteCompletedTasks(boardId)
@@ -77,7 +78,8 @@ export default function BoardView() {
               >
                 {task.completed ? '✅' : '⬜️'}
               </button>
-              {task.content}
+              {uppercase ? task.content.toUpperCase() : task.content}
+
             </span>
             <button
               onClick={() => remove.mutate(task.id)}
