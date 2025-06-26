@@ -6,6 +6,8 @@ import { useDeleteCompletedTasks } from '../hooks/useDeleteCompletedTasks'
 import { useTaskFilterStore } from '../store/useTaskFilterStore'
 import NewTaskForm from '../components/NewTaskForm'
 import { useConfigStore } from '../store/configStore'
+import { Link } from '@tanstack/react-router'
+
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -124,6 +126,14 @@ export default function BoardView() {
           Siguiente ➡
         </button>
       </div>
+
+      {/* Enlace a configuración */}
+      <div className="mt-8 text-center">
+        <Link to="/boards/settings" >
+          ⚙ Configuración
+        </Link>
+      </div>
+
     </div>
   )
 }

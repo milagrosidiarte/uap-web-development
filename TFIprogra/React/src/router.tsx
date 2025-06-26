@@ -5,6 +5,8 @@ import HomePage from './pages/Home'
 import RegisterPage from './pages/Register'
 import BoardsPage from './pages/Boards'
 import BoardView from './pages/BoardView'
+import BoardSettingsPage from './pages/BoardSettingsPage'
+
 const rootRoute = createRootRoute({
   component: App,
 })
@@ -39,12 +41,19 @@ const boardViewRoute = createRoute({
   component: BoardView,
 })
 
+export const boardSettingsRoute = createRoute({
+  getParentRoute: () => boardsRoute,
+  path: '/settings',
+  component: BoardSettingsPage,
+})
+
 const routeTree = rootRoute.addChildren([
   homeRoute,
   loginRoute,
   registerRoute, 
   boardsRoute,
-  boardViewRoute
+  boardViewRoute,
+  boardSettingsRoute,
   // Aquí es donde defines la ruta de registro
   // agregarás register y otras rutas luego
 ])
