@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const checkAuth = require('../middlewares/checkAuth');
-const { crearTablero, listarTableros, compartirTablero } = require('../controllers/boardsController');
+const { crearTablero, listarTableros, compartirTablero, eliminarTablero } = require('../controllers/boardsController');
 const { obtenerUsuariosDelTablero } = require('../controllers/boardsController');
 
 router.use(checkAuth); // protege todas las rutas siguientes

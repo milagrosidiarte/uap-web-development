@@ -98,6 +98,6 @@ const eliminarTablero = (req, res) => {
   res.json({ message: 'Tablero eliminado' });
 };
 
-module.exports = { crearTablero, listarTableros, compartirTablero };
+module.exports = { crearTablero, listarTableros, compartirTablero, eliminarTablero };
 // Este controlador maneja la creación y listado de tableros.
 // Utiliza la base de datos para insertar nuevos tableros y recuperar los existentes,
