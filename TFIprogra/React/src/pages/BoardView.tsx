@@ -7,7 +7,7 @@ import { useTaskFilterStore } from '../store/useTaskFilterStore'
 import NewTaskForm from '../components/NewTaskForm'
 import { useConfigStore } from '../store/configStore'
 import { Link } from '@tanstack/react-router'
-
+import CompartirTableroForm from '../components/CompartirTableroForm'
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -134,6 +134,8 @@ export default function BoardView() {
         </Link>
       </div>
 
+      {/* Compartir tablero */}
+      <CompartirTableroForm />
     </div>
   )
 }
