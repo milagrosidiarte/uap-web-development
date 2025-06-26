@@ -13,8 +13,8 @@ type FilterState = {
 export const useTaskFilterStore = create<FilterState>((set) => ({
   completed: 'all',
   search: '',
-  setCompleted: (value) => set({ completed: value }),
-  setSearch: (value) => set({ search: value }),
+  setCompleted: (value) => set({ completed: value, page: 1 }),
+  setSearch: (value) => set({ search: value, page: 1 }),
   page: 1,
   setPage: (page) => set({ page }),
 

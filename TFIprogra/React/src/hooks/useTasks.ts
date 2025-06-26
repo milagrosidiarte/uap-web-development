@@ -3,7 +3,7 @@ import { useTaskFilterStore } from '../store/useTaskFilterStore'
 
 export function useTasks(boardId: string) {
   const { completed, search, page } = useTaskFilterStore()
-
+  
   return useQuery({
     queryKey: ['tasks', boardId, completed, search, page],
     queryFn: async () => {
