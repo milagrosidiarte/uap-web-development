@@ -9,7 +9,7 @@ router.use(checkAuth); // protege todas las rutas siguientes
 router.post('/', crearTablero);      // POST /api/boards
 router.get('/', listarTableros);     // GET  /api/boards
 router.post('/:boardId/share', compartirTablero);
-router.get('/:boardId/users', checkAuth, obtenerUsuariosDelTablero);
+
 
 module.exports = router;
 // Este archivo define las rutas para manejar tableros.

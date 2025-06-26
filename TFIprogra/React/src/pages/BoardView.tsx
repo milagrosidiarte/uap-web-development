@@ -8,7 +8,7 @@ import NewTaskForm from '../components/NewTaskForm'
 import { useConfigStore } from '../store/configStore'
 import { Link } from '@tanstack/react-router'
 import CompartirTableroForm from '../components/CompartirTableroForm'
-import UsuariosCompartidos from '../components/UsuariosCompartidos'
+
 
 export default function BoardView() {
   const { boardId } = useParams({ strict: false }) as { boardId: string }
@@ -138,8 +138,6 @@ export default function BoardView() {
       {/* Compartir tablero */}
       <CompartirTableroForm />
 
-      {/* Usuarios compartidos */}
-      <UsuariosCompartidos />
     </div>
   )
 }
