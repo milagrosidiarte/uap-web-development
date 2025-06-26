@@ -1,103 +1,187 @@
+# TODO App – Documentación Completa
 
-# TODO App — Backend + Frontend con Autenticación y Autorización
-
-Este proyecto es una aplicación web completa para gestionar tareas, con múltiples tableros, autenticación segura, permisos por usuario y configuración personalizable.
-
----
-
-## Tecnologías
-
-- **Frontend:** React + Vite + TanStack Router + Zustand + Tailwind
-- **Backend:** Node.js + Express + SQLite + JWT
-- **Base de Datos:** SQLite con mejor-sqlite3
+Esta es una aplicación web para gestionar tareas por tableros. Incluye autenticación, permisos de usuario, edición colaborativa, configuración personalizada y una API RESTful construida con Express y SQLite.
 
 ---
 
-## Requisitos previos
+## Autenticación
 
-- Node.js (versión 18+ recomendada)
-- npm o pnpm
-- SQLite (o simplemente usar el archivo `.db` generado)
+### POST `/api/auth/register`
+Registra un nuevo usuario.
 
----
-
-## Instalación
-
-### Clonar el repositorio
-
-```bash
-git clone <REPO_URL>
-cd TFIprogra
+**Body:**
+```json
+{ "username": "usuario", "password": "secreto" }
 ```
 
-### Backend
+### POST `/api/auth/login`
+Inicia sesión y devuelve un token en cookie HTTP-only.
 
-```bash
-cd backend
-npm install
-npm run dev
+**Body:**
+```json
+{ "username": "usuario", "password": "secreto" }
 ```
 
-> Esto inicia el servidor Express en `http://localhost:3000` y crea automáticamente la base de datos (`initDB.js`).
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-> El frontend se ejecuta en `http://localhost:5173`
+### POST `/api/auth/logout`
+Cierra la sesión.
 
 ---
 
-## Usuarios de prueba
+## Usuarios y Permisos
 
-Podés registrarte o usar estos usuarios de ejemplo:
-
-| Usuario | Contraseña | Rol    |
-|---------|------------|--------|
-| juan    | 1234       | owner  |
-| sofia   | 1234       | viewer |
-| marco   | 1234       | editor |
+- Cada usuario puede crear tableros.
+- Cada tablero tiene un propietario.
+- El propietario puede compartir el tablero con otros usuarios.
+- Los roles posibles son:
+  - `owner`: control total
+  - `editor`: puede gestionar tareas
+  - `viewer`: solo lectura
 
 ---
 
-## Scripts útiles
+## Tableros
 
-```bash
-# Iniciar backend
-npm run dev
+### GET `/api/boards`
+Lista todos los tableros donde el usuario tiene acceso.
 
-# Resetear base de datos (borrar manualmente archivo .db si es necesario)
+### POST `/api/boards`
+Crea un nuevo tablero.
+
+**Body:**
+```json
+{ "name": "Tablero de ejemplo" }
+```
+
+### DELETE `/api/boards/:boardId`
+Elimina el tablero si sos el dueño.
+
+### POST `/api/boards/:boardId/share`
+Comparte el tablero con otro usuario asignando un rol.
+
+**Body:**
+```json
+{ "username": "otroUsuario", "role": "viewer" }
 ```
 
 ---
 
-## Documentación de la API
+## Tareas
 
-Podés encontrar la documentación completa de los endpoints en el archivo [`API.md`](./API.md)
+### GET `/api/boards/:boardId/tasks`
+Lista tareas del tablero.
+
+**Query Params:**
+
+- `limit` (número): cantidad por página
+- `offset` (número): desplazamiento
+- `completed`: `0`, `1` o `all`
+- `q`: texto de búsqueda
+
+### POST `/api/boards/:boardId/tasks`
+Crea una nueva tarea.
+
+**Body:**
+```json
+{ "content": "Estudiar para el parcial" }
+```
+
+### PUT `/api/boards/tasks/:taskId`
+Edita el contenido de una tarea.
+
+**Body:**
+```json
+{ "content": "Nuevo texto" }
+```
+
+### PATCH `/api/boards/tasks/:taskId/toggle`
+Alterna el estado de completado.
+
+### DELETE `/api/boards/tasks/:taskId`
+Elimina una tarea.
+
+### DELETE `/api/boards/:boardId/tasks/completed`
+Elimina todas las tareas completadas de ese tablero.
 
 ---
 
-## Funcionalidades implementadas
+## Configuraciones por usuario
 
-- Registro, login y logout
-- JWT en cookie HTTP-only
-- CRUD de tableros y tareas
-- Compartir tableros con `editor` o `viewer`
-- Autorización por rol
-- Paginación, búsqueda, filtros
-- Configuración de preferencias (limit, mayúsculas, auto-refresh)
-- Interfaz en React completamente funcional
+Cada usuario puede definir:
+
+- `limit`: cantidad de tareas por página
+- `autoRefreshInterval`: tiempo de refetch automático
+- `uppercase`: mostrar tareas en mayúsculas
+
+Estas configuraciones se guardan en SQLite (`user_settings`) y se aplican automáticamente.
 
 ---
 
 ## Seguridad
 
-- Contraseñas hasheadas con bcrypt
-- Validación de permisos por tablero
-- Cookies seguras (HTTP-only)
-- Sanitización básica de inputs
+- Contraseñas hasheadas
+- JWT en cookies HTTP-only
+- Validación de inputs
+- Verificación de permisos por acción
+- CORS configurado
 
+---
+
+## Frontend
+
+- Hecho en **React + Vite**
+- Enrutamiento con **TanStack Router**
+- Estado remoto con **TanStack Query**
+- Estado local con **Zustand**
+- Formularios reutilizables (crear / editar tareas)
+- Toasts con `react-hot-toast` para acciones y errores
+- Acciones protegidas según permisos
+
+---
+
+## Notificaciones (Toasts)
+
+- Crear tarea
+- Editar tarea
+- Eliminar tarea
+- Eliminar tareas completadas
+- Compartir tablero
+- Eliminar tablero
+
+---
+
+## Estado actual
+
+✔ Login y Registro  
+✔ JWT + Cookies  
+✔ CRUD de tareas  
+✔ Paginación y filtros  
+✔ Compartir tableros  
+✔ Edición de tareas  
+✔ Eliminación de tableros  
+✔ Página de configuraciones  
+✔ Toasts en todas las acciones  
+✔ Base de datos persistente (SQLite)  
+✔ Seguridad con permisos por rol
+
+---
+
+## Estructura del proyecto
+
+```
+/backend
+  /src
+    /controllers
+    /routes
+    /middlewares
+    /db
+  index.js
+/React
+  /src
+    /pages
+    /components
+    /hooks
+    /api
+    /store
+  main.tsx
+```
+---
