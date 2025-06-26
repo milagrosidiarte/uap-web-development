@@ -5,11 +5,9 @@ export default function SettingsPage() {
     limit,
     uppercase,
     autoRefetchInterval,
-    darkMode,
     setLimit,
     setUppercase,
     setAutoRefetchInterval,
-    setDarkMode,
   } = useConfigStore()
 
   return (
@@ -51,18 +49,7 @@ export default function SettingsPage() {
         onChange={(e) => setAutoRefetchInterval(Number(e.target.value))}
       />
     </div>
-
-    <div>
-      <label className="block font-medium">Modo oscuro</label>
-      <input
-          type="checkbox"
-          className="mr-2"
-          checked={darkMode}
-           onChange={(e) => setDarkMode(e.target.checked)}
-      />
-      <span>{darkMode ? "Activado" : "Desactivado"}</span>
-      </div>
-    </div>
+  </div>
   </div>
   )
 }

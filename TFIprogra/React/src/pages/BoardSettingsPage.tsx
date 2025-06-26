@@ -6,11 +6,9 @@ export default function BoardSettingsPage() {
 	limit,
 	uppercase,
 	autoRefetchInterval,
-	darkMode,
 	setLimit,
 	setUppercase,
 	setAutoRefetchInterval,
-	setDarkMode,
   } = useConfigStore()
 
   return (
@@ -53,18 +51,6 @@ export default function BoardSettingsPage() {
 			onChange={(e) => setAutoRefetchInterval(Number(e.target.value))}
 		  />
 		  <p className="text-sm text-gray-500 mt-1">0 para desactivar el refresco automático</p>
-		</div>
-
-		<div>
-		  <label className="block font-medium mb-1">Modo oscuro</label>
-		  <div className="flex items-center gap-2">
-			<input
-			  type="checkbox"
-			  checked={darkMode}
-			  onChange={(e) => setDarkMode(e.target.checked)}
-			/>
-			<span>{darkMode ? 'Activado' : 'Desactivado'}</span>
-		  </div>
 		</div>
 	  </div>
 	</div>
