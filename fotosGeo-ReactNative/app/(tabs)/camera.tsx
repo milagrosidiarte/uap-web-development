@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Image, ActivityIndicator, Alert, FlatList } from "react-native";
+import { StyleSheet, Pressable, Text, View, TouchableOpacity, Image, ActivityIndicator, Alert, FlatList } from "react-native";
 import { CameraView, useCameraPermissions, type CameraType } from "expo-camera";
 import * as Location from "expo-location";
 import * as FileSystem from "expo-file-system/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Link } from "expo-router";
+
 
 type Shot = {
   id: string;
@@ -204,21 +205,29 @@ export default function CameraScreen() {
             href={{ pathname: "/photo/[id]", params: { id: item.id } }}
             asChild
           >
-            <View style={styles.card}>
-                <Image source={{ uri: item.uri }} style={styles.thumb} />
-                <View style={{ flex: 1 }}>
+            <Pressable style={styles.card}>
+              <Image source={{ uri: item.uri }} style={styles.thumb} />
+              <View style={{ flex: 1 }}>
                 <Text style={styles.meta}>{new Date(item.when).toLocaleString()}</Text>
                 <Text style={styles.meta}>
-                    {item.lat != null && item.lng != null
+                  {item.lat != null && item.lng != null
                     ? `Lat: ${item.lat.toFixed(6)}   Lng: ${item.lng.toFixed(6)}`
                     : "Ubicación no disponible"}
                 </Text>
-                </View>
-                <TouchableOpacity onPress={() => removeOne(item.id)} style={[styles.chip, { backgroundColor: "#ef4444" }]}>
+              </View>
+
+              {/* Detenemos la propagación para que NO navegue al tocar la X */}
+              <TouchableOpacity
+                onPress={(e) => {
+                  e.stopPropagation();
+                  removeOne(item.id);
+                }}
+                style={[styles.chip, { backgroundColor: "#ef4444" }]}
+              >
                 <Text style={{ color: "white", fontWeight: "700" }}>X</Text>
-                </TouchableOpacity>
-            </View>
-        </Link>
+              </TouchableOpacity>
+            </Pressable>
+          </Link>
         )}
       />
     </View>
