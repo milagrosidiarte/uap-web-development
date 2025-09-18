@@ -9,13 +9,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Necesito usar la cámara para tomar fotos."
+        "NSCameraUsageDescription": "Necesito usar la cámara para tomar fotos.",
+         "NSLocationWhenInUseUsageDescription": "Necesito tu ubicación para etiquetar cada foto."
       }
     },
     "android": {
-      "permissions": ["CAMERA"],
+      "permissions": ["CAMERA","ACCESS_COARSE_LOCATION","ACCESS_FINE_LOCATION"],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
