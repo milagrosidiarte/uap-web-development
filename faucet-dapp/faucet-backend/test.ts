@@ -1,17 +1,22 @@
 import "dotenv/config";
-import { getStatus } from "./services/contract";
+import { claimTokens, getStatus } from "./services/contract";
 
 async function main() {
-  const testAddress = "0x0000000000000000000000000000000000000000"; // 👈 reemplaza con tu wallet en Sepolia si querés
-  console.log(`🔍 Consultando estado del faucet para: ${testAddress}`);
+  const address = process.env.WALLET_ADDRESS!; // tu dirección pública
+  console.log(`🔍 Estado inicial del faucet para: ${address}`);
+  const statusBefore = await getStatus(address);
+  console.log(statusBefore);
 
-  try {
-    const status = await getStatus(testAddress);
-    console.log("✅ Respuesta del contrato:");
-    console.log(status);
-  } catch (err) {
-    console.error("❌ Error al consultar:", err);
-  }
+  console.log("🚀 Intentando reclamar tokens...");
+  const txHash = await claimTokens(address);
+  console.log("✅ Transacción enviada:", txHash);
+
+  // esperar confirmación en etherscan si quieres
+  setTimeout(async () => {
+    console.log("🔍 Estado después del reclamo:");
+    const statusAfter = await getStatus(address);
+    console.log(statusAfter);
+  }, 15000); // espera 15s
 }
 
 main();
