@@ -4,7 +4,7 @@ import { FAUCET_TOKEN_ADDRESS, FAUCET_TOKEN_ABI } from "./faucetTokenAbi";
 function App() {
   const { address, isConnected } = useAccount();
 
-  // Balance
+  // Balance del usuario
   const { data: balance } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
@@ -12,12 +12,19 @@ function App() {
     args: address ? [address] : undefined,
   });
 
-  // Estado de reclamo
+  // Estado: si ya reclamó
   const { data: hasClaimed } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
     functionName: "hasAddressClaimed",
     args: address ? [address] : undefined,
+  });
+
+  // Lista de usuarios del faucet
+  const { data: faucetUsers } = useReadContract({
+    abi: FAUCET_TOKEN_ABI,
+    address: FAUCET_TOKEN_ADDRESS,
+    functionName: "getFaucetUsers",
   });
 
   // Reclamar tokens
@@ -48,6 +55,17 @@ function App() {
           <button onClick={handleClaim} disabled={!!hasClaimed}>
             Reclamar Tokens
           </button>
+
+          <h2>📜 Usuarios del Faucet</h2>
+          {Array.isArray(faucetUsers) && faucetUsers.length > 0 ? (
+            <ul>
+              {faucetUsers.map((user) => (
+                <li key={user}>{user}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>Nadie reclamó aún.</p>
+          )}
         </>
       ) : (
         <p>Conecta tu wallet para continuar</p>
