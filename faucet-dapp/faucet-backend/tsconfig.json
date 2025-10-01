@@ -1,14 +1,16 @@
 {
   "compilerOptions": {
     "outDir": "./dist",
-    "module": "NodeNext",
+    "module": "CommonJS",
     "target": "ES2020",
     "sourceMap": true,
     "declaration": true,
     "strict": true,
-    "moduleResolution": "NodeNext",
+    "moduleResolution": "Node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-  }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["dist", "node_modules"]
 }
