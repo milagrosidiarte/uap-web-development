@@ -7,11 +7,15 @@ const router = Router();
 router.post("/", async (req, res) => {
   try {
     const { message, signature } = req.body;
+    if(!message || !signature) {
+        return res.status(400).json({error: "Message and signature requiered"});
+    }
+
     const siweMessage = new SiweMessage(message);
     const fields = await siweMessage.verify({ signature });
 
     if (!fields.success) {
-      return res.status(400).json({ error: "Invalid signature" });
+      return res.status(403).json({ error: "Invalid signature" });
     }
 
     const address = siweMessage.address;
