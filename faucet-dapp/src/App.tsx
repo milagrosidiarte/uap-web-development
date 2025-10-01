@@ -10,6 +10,7 @@ import { formatUnits } from "viem";
 function App() {
   const { address, isConnected } = useAccount();
 
+  // 🔹 Balance del usuario
   const { data: balance } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
@@ -17,6 +18,7 @@ function App() {
     args: address ? [address] : undefined,
   });
 
+  // 🔹 Estado de reclamo
   const { data: hasClaimed } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
@@ -24,18 +26,21 @@ function App() {
     args: address ? [address] : undefined,
   });
 
+  // 🔹 Lista de usuarios
   const { data: faucetUsers } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
     functionName: "getFaucetUsers",
   });
 
+  // 🔹 Monto del faucet
   const { data: faucetAmount } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
     functionName: "getFaucetAmount",
   });
 
+  // 🔹 Reclamar tokens con feedback
   const { writeContract, data: txHash, isPending, error: writeError } =
     useWriteContract();
   const {
@@ -57,39 +62,45 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-lg bg-white shadow-md rounded-xl p-6">
-        <h1 className="text-2xl font-bold text-center mb-4">🚰 Faucet dApp</h1>
+      <div className="w-full max-w-lg bg-white shadow-lg rounded-xl p-6">
+        <h1 className="text-2xl font-bold text-center mb-6 text-blue-600">
+          🚰 Faucet dApp
+        </h1>
 
         {isConnected ? (
           <div className="space-y-4">
-            <div className="p-4 bg-gray-50 rounded-lg shadow-sm">
-              <p className="text-sm text-gray-600">Cuenta:</p>
-              <p className="font-mono text-sm break-all">{address}</p>
+            {/* Cuenta */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500">Cuenta conectada</p>
+              <p className="font-mono text-xs break-all">{address}</p>
             </div>
 
+            {/* Info */}
             <div className="grid grid-cols-2 gap-4 text-center">
               <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-gray-600">Balance</p>
+                <p className="text-xs text-gray-500">Balance</p>
                 <p className="font-bold">
                   {balance ? formatUnits(balance as bigint, 18) : "..."}
                 </p>
               </div>
               <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-600">Monto Faucet</p>
+                <p className="text-xs text-gray-500">Monto Faucet</p>
                 <p className="font-bold">
                   {faucetAmount ? formatUnits(faucetAmount as bigint, 18) : "..."}
                 </p>
               </div>
             </div>
 
+            {/* Estado */}
             <p className="text-center">
               {hasClaimed ? "✅ Ya reclamaste" : "💧 Podés reclamar"}
             </p>
 
+            {/* Botón */}
             <button
               onClick={handleClaim}
               disabled={!!hasClaimed || isPending || isConfirming}
-              className={`w-full py-2 rounded-lg text-white font-semibold ${
+              className={`w-full py-2 rounded-lg text-white font-semibold transition ${
                 hasClaimed || isPending || isConfirming
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-blue-600 hover:bg-blue-700"
@@ -102,6 +113,7 @@ function App() {
                 : "Reclamar Tokens"}
             </button>
 
+            {/* Feedback */}
             {writeError && (
               <p className="text-red-500 text-sm text-center">
                 ⚠️ {writeError.message}
@@ -113,12 +125,13 @@ function App() {
               </p>
             )}
 
+            {/* Usuarios */}
             <div>
               <h2 className="text-lg font-semibold mb-2">
                 📜 Usuarios del Faucet
               </h2>
               {Array.isArray(faucetUsers) && faucetUsers.length > 0 ? (
-                <ul className="list-disc pl-5 space-y-1 text-sm">
+                <ul className="list-disc pl-6 text-sm space-y-1">
                   {faucetUsers.map((user) => (
                     <li key={user} className="font-mono break-all">
                       {user}
