@@ -4,7 +4,7 @@ import App from './App.tsx'
 import { WagmiProvider } from 'wagmi'
 import { wagmiConfig } from './wagmiConfig'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import "./index.css";
+import "./style.css";
 
 const queryClient = new QueryClient()
 
