@@ -5,19 +5,21 @@ function App() {
   const { connect, connectors } = useConnect()
   const { disconnect } = useDisconnect()
 
+  const metamask = connectors.find(c => c.id === 'injected')
+
   return (
     <div style={{ padding: '2rem' }}>
       <h1>🚰 Faucet dApp</h1>
 
       {!isConnected ? (
-        <button onClick={() => connect({ connector: connectors[0] })}>
-          Conectar Wallet
+        <button onClick={() => metamask && connect({ connector: metamask })}>
+          Conectar con MetaMask
         </button>
       ) : (
-        <>
-          <p>Conectado: {address}</p>
+        <div>
+          <p>✅ Conectado: {address}</p>
           <button onClick={() => disconnect()}>Desconectar</button>
-        </>
+        </div>
       )}
     </div>
   )
