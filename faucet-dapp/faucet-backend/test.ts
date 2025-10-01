@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { getStatus } from "../services/contract";
+import { getStatus } from "./services/contract";
 
 async function main() {
   const testAddress = "0x0000000000000000000000000000000000000000"; // 👈 reemplaza con tu wallet en Sepolia si querés
