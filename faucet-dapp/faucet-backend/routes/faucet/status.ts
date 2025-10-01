@@ -1,15 +1,23 @@
-import { Router } from "express";
+import { Router, Request, Response, NextFunction } from "express";
 import { getStatus } from "../../services/contract";
-import jwt from "jsonwebtoken";
+import jwt, { JwtPayload } from "jsonwebtoken";
+
+// Extendemos Request para que acepte req.user
+interface AuthRequest extends Request {
+  user?: string | JwtPayload;
+}
 
 const router = Router();
 
-function authenticate(req: any, res: any, next: any) {
+// Middleware para JWT
+function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "No token provided" });
+  if (!token) {
+    return res.status(401).json({ error: "No token provided" });
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     req.user = decoded;
     next();
   } catch {
@@ -17,7 +25,8 @@ function authenticate(req: any, res: any, next: any) {
   }
 }
 
-router.get("/:address", authenticate, async (req, res) => {
+// GET /faucet/status/:address
+router.get("/:address", authenticate, async (req: AuthRequest, res: Response) => {
   try {
     const status = await getStatus(req.params.address);
     res.json(status);
