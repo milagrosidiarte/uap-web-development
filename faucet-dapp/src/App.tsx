@@ -1,10 +1,15 @@
-import { useAccount, useReadContract, useWriteContract } from "wagmi";
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+} from "wagmi";
 import { FAUCET_TOKEN_ADDRESS, FAUCET_TOKEN_ABI } from "./faucetTokenAbi";
+import { formatUnits } from "viem";
 
 function App() {
   const { address, isConnected } = useAccount();
 
-  // Balance del usuario
   const { data: balance } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
@@ -12,7 +17,6 @@ function App() {
     args: address ? [address] : undefined,
   });
 
-  // Estado: si ya reclamó
   const { data: hasClaimed } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
@@ -20,15 +24,25 @@ function App() {
     args: address ? [address] : undefined,
   });
 
-  // Lista de usuarios del faucet
   const { data: faucetUsers } = useReadContract({
     abi: FAUCET_TOKEN_ABI,
     address: FAUCET_TOKEN_ADDRESS,
     functionName: "getFaucetUsers",
   });
 
-  // Reclamar tokens
-  const { writeContract } = useWriteContract();
+  const { data: faucetAmount } = useReadContract({
+    abi: FAUCET_TOKEN_ABI,
+    address: FAUCET_TOKEN_ADDRESS,
+    functionName: "getFaucetAmount",
+  });
+
+  // Reclamo con feedback
+  const { writeContract, data: txHash, isPending, error: writeError } =
+    useWriteContract();
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+  } = useWaitForTransactionReceipt({ hash: txHash });
 
   const handleClaim = async () => {
     try {
@@ -49,12 +63,29 @@ function App() {
       {isConnected ? (
         <>
           <p>Cuenta: {address}</p>
-          <p>Balance: {balance?.toString() ?? "..."}</p>
+          <p>
+            Balance:{" "}
+            {balance ? formatUnits(balance as bigint, 18) : "..."} tokens
+          </p>
+          <p>
+            Monto del faucet:{" "}
+            {faucetAmount ? formatUnits(faucetAmount as bigint, 18) : "..."} tokens
+          </p>
           <p>{hasClaimed ? "✅ Ya reclamaste" : "💧 Podés reclamar"}</p>
 
-          <button onClick={handleClaim} disabled={!!hasClaimed}>
-            Reclamar Tokens
+          <button
+            onClick={handleClaim}
+            disabled={!!hasClaimed || isPending || isConfirming}
+          >
+            {isPending
+              ? "📤 Enviando..."
+              : isConfirming
+              ? "⏳ Confirmando..."
+              : "Reclamar Tokens"}
           </button>
+
+          {writeError && <p style={{ color: "red" }}>⚠️ {writeError.message}</p>}
+          {isConfirmed && <p style={{ color: "green" }}>✅ Reclamo exitoso</p>}
 
           <h2>📜 Usuarios del Faucet</h2>
           {Array.isArray(faucetUsers) && faucetUsers.length > 0 ? (
