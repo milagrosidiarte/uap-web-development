@@ -1,10 +1,10 @@
-import { Router } from "express";
-import claimRoute from "./claim";
-import statusRoute from "./status";
+import { Router } from 'express';
+import claimRouter from './claim';
+import statusRouter from './status';
 
 const router = Router();
 
-router.use("/claim", claimRoute);
-router.use("/status", statusRoute);
+router.use('/claim', claimRouter);
+router.use('/status', statusRouter);
 
 export default router;

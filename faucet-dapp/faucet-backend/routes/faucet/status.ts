@@ -1,37 +1,38 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { getStatus } from "../../services/contract";
-import jwt, { JwtPayload } from "jsonwebtoken";
-
-// Extendemos Request para que acepte req.user
-interface AuthRequest extends Request {
-  user?: string | JwtPayload;
-}
+import { Router, Response } from "express";
+import { ethers } from "ethers";
+import { authMiddleware, AuthRequest } from "../authMiddleware";
 
 const router = Router();
 
-// Middleware para JWT
-function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
+const contractABI = [
+  "function balanceOf(address account) view returns (uint256)",
+  "function hasAddressClaimed(address user) view returns (bool)",
+  "function getFaucetAmount() view returns (uint256)",
+  "function getFaucetUsers() view returns (address[])"
+];
 
+router.get("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(403).json({ error: "Invalid token" });
-  }
-}
+    const userAddress = req.user!.address;
 
-// GET /faucet/status/:address
-router.get("/:address", authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const status = await getStatus(req.params.address);
-    res.json(status);
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, contractABI, provider);
+
+    const balance: bigint = await contract.balanceOf(userAddress);
+    const hasClaimed: boolean = await contract.hasAddressClaimed(userAddress);
+    const faucetAmount: bigint = await contract.getFaucetAmount();
+    const usersList: string[] = await contract.getFaucetUsers();
+
+    res.json({
+      balance: ethers.formatEther(balance),
+      hasClaimed,
+      faucetAmount: ethers.formatEther(faucetAmount),
+      users: usersList
+    });
   } catch (err) {
-    res.status(500).json({ error: "Status failed", details: err });
+    const error = err as Error;
+    console.error("❌ Error en /faucet/status:", error.message);
+    res.status(500).json({ error: "Error al consultar estado del faucet" });
   }
 });
 

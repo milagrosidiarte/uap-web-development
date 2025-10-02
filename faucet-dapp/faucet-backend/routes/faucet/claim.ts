@@ -1,38 +1,49 @@
-import { Router, Request, Response, NextFunction } from "express";
-import { claimTokens } from "../../services/contract";
-import jwt, { JwtPayload } from "jsonwebtoken";
-
-// Extendemos Request para guardar el usuario del token
-interface AuthRequest extends Request {
-  user?: string | JwtPayload;
-}
+import { Router, Response } from "express";
+import { ethers } from "ethers";
+import { authMiddleware, AuthRequest } from "../authMiddleware";
 
 const router = Router();
 
-// Middleware para JWT
-function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
-  const token = req.headers["authorization"]?.split(" ")[1];
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
+const contractABI = [
+  "function claimTokens() nonpayable",
+  "function hasAddressClaimed(address user) view returns (bool)",
+  "function balanceOf(address account) view returns (uint256)",
+  "function getFaucetAmount() view returns (uint256)",
+  "function getFaucetUsers() view returns (address[])"
+];
 
+router.post("/", authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
-    req.user = decoded;
-    next();
-  } catch {
-    return res.status(403).json({ error: "Invalid token" });
-  }
-}
+    const userAddress = req.user!.address;
 
-// Endpoint de reclamar tokens
-router.post("/", authenticate, async (req: AuthRequest, res: Response) => {
-  try {
-    const address = (req.user as JwtPayload).address;
-    const txHash = await claimTokens(address);
-    res.json({ success: true, txHash });
+    const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+    const privateKey = process.env.PRIVATE_KEY;
+    if (!privateKey) {
+      res.status(500).json({ error: "Falta configurar PRIVATE_KEY en el servidor" });
+      return;
+    }
+
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS!, contractABI, wallet);
+
+    const hasClaimed: boolean = await contract.hasAddressClaimed(userAddress);
+    if (hasClaimed) {
+      res.status(400).json({ error: "Ya reclamaste tus tokens" });
+      return;
+    }
+
+    const tx = await contract.claimTokens();
+    await tx.wait();
+
+    res.json({
+      success: true,
+      txHash: tx.hash as string,
+      message: "✅ Tokens reclamados exitosamente"
+    });
   } catch (err) {
-    res.status(500).json({ error: "Claim failed", details: err });
+    const error = err as Error;
+    console.error("❌ Error en /faucet/claim:", error.message);
+    res.status(500).json({ error: "Error al reclamar tokens" });
   }
 });
 

@@ -1,31 +1,51 @@
-import { Router } from "express";
-import { SiweMessage } from "siwe";
+import { Router, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { SiweMessage } from "siwe";
+import { getNonce, deleteNonce } from "../../utils/nonceStore";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
+  const { message, signature } = req.body;
+  if (!message || !signature) {
+    return res.status(400).json({ error: "Faltan datos" });
+  }
+
   try {
-    const { message, signature } = req.body;
-    if(!message || !signature) {
-        return res.status(400).json({error: "Message and signature requiered"});
-    }
-
     const siweMessage = new SiweMessage(message);
-    const fields = await siweMessage.verify({ signature });
 
-    if (!fields.success) {
-      return res.status(403).json({ error: "Invalid signature" });
+    // Recuperar el nonce guardado para esa dirección
+    const storedNonce = getNonce(siweMessage.address);
+    if (!storedNonce || storedNonce !== siweMessage.nonce) {
+      return res.status(401).json({ error: "Nonce inválido o expirado" });
     }
 
-    const address = siweMessage.address;
-    const token = jwt.sign({ address }, process.env.JWT_SECRET!, {
-      expiresIn: "1h",
+    const { success, data } = await siweMessage.verify({
+      signature,
+      domain: "localhost",
+      nonce: storedNonce,
     });
+
+    if (!success) {
+      return res.status(401).json({ error: "Firma inválida" });
+    }
+
+    // Eliminamos el nonce (solo se usa una vez)
+    deleteNonce(siweMessage.address);
+
+    const address = data.address;
+
+    const token = jwt.sign(
+      { address },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1h" }
+    );
 
     res.json({ token, address });
   } catch (err) {
-    res.status(500).json({ error: "Signin failed", details: err });
+    const error = err as Error;
+    console.error("❌ Error al verificar SIWE:", error.message);
+    res.status(400).json({ error: "Error al verificar SIWE" });
   }
 });
 

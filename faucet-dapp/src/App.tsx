@@ -1,64 +1,98 @@
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-} from "wagmi";
-import { FAUCET_TOKEN_ADDRESS, FAUCET_TOKEN_ABI } from "./faucetTokenAbi";
-import { formatUnits } from "viem";
+import { useState, useEffect, useCallback } from "react";
+import { useAccount, useSignMessage } from "wagmi";
+
+const API_URL = "http://localhost:4000"; // Cambiar si tu backend corre en otra URL
+
+interface FaucetStatus {
+  balance: string;
+  hasClaimed: boolean;
+  faucetAmount: string;
+  users: string[];
+}
 
 function App() {
   const { address, isConnected } = useAccount();
+  const { signMessageAsync } = useSignMessage();
 
-  // 🔹 Balance del usuario
-  const { data: balance } = useReadContract({
-    abi: FAUCET_TOKEN_ABI,
-    address: FAUCET_TOKEN_ADDRESS,
-    functionName: "balanceOf",
-    args: address ? [address] : undefined,
-  });
+  const [token, setToken] = useState<string | null>(
+    () => localStorage.getItem("jwt")
+  );
+  const [status, setStatus] = useState<FaucetStatus | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // 🔹 Estado de reclamo
-  const { data: hasClaimed } = useReadContract({
-    abi: FAUCET_TOKEN_ABI,
-    address: FAUCET_TOKEN_ADDRESS,
-    functionName: "hasAddressClaimed",
-    args: address ? [address] : undefined,
-  });
+  // 🔹 Login con SIWE
+  const handleLogin = async () => {
+    if (!address) return;
 
-  // 🔹 Lista de usuarios
-  const { data: faucetUsers } = useReadContract({
-    abi: FAUCET_TOKEN_ABI,
-    address: FAUCET_TOKEN_ADDRESS,
-    functionName: "getFaucetUsers",
-  });
-
-  // 🔹 Monto del faucet
-  const { data: faucetAmount } = useReadContract({
-    abi: FAUCET_TOKEN_ABI,
-    address: FAUCET_TOKEN_ADDRESS,
-    functionName: "getFaucetAmount",
-  });
-
-  // 🔹 Reclamar tokens con feedback
-  const { writeContract, data: txHash, isPending, error: writeError } =
-    useWriteContract();
-  const {
-    isLoading: isConfirming,
-    isSuccess: isConfirmed,
-  } = useWaitForTransactionReceipt({ hash: txHash });
-
-  const handleClaim = async () => {
     try {
-      await writeContract({
-        abi: FAUCET_TOKEN_ABI,
-        address: FAUCET_TOKEN_ADDRESS,
-        functionName: "claimTokens",
+      // 1. pedir mensaje SIWE al backend
+      const res1 = await fetch(`${API_URL}/auth/message`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
       });
+      const { message } = await res1.json();
+
+      // 2. firmar mensaje con la wallet
+      const signature = await signMessageAsync({ message });
+
+      // 3. mandar firma al backend
+      const res2 = await fetch(`${API_URL}/auth/signin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, signature }),
+      });
+      const data = await res2.json();
+
+      if (data.token) {
+        localStorage.setItem("jwt", data.token);
+        setToken(data.token);
+      }
     } catch (err) {
-      console.error("❌ Error al reclamar:", err);
+      console.error("❌ Error en login:", err);
     }
   };
+
+  // 🔹 Consultar estado faucet
+  const fetchStatus = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/faucet/status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data: FaucetStatus = await res.json();
+      setStatus(data);
+    } catch (err) {
+      console.error("❌ Error status:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
+
+  // 🔹 Reclamar tokens
+  const handleClaim = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/faucet/claim`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      console.log("✅ Claim result:", data);
+      fetchStatus(); // refrescar estado
+    } catch (err) {
+      console.error("❌ Error claim:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // cargar status cuando ya hay token
+  useEffect(() => {
+    if (token) fetchStatus();
+  }, [token, fetchStatus]);
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-6">
@@ -67,7 +101,22 @@ function App() {
           🚰 Faucet dApp
         </h1>
 
-        {isConnected ? (
+        {!isConnected && (
+          <p className="text-center text-gray-600">
+            Conecta tu wallet para continuar
+          </p>
+        )}
+
+        {isConnected && !token && (
+          <button
+            onClick={handleLogin}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold"
+          >
+            🔑 Login con Ethereum
+          </button>
+        )}
+
+        {isConnected && token && (
           <div className="space-y-4">
             {/* Cuenta */}
             <div className="p-4 bg-gray-50 rounded-lg">
@@ -75,78 +124,55 @@ function App() {
               <p className="font-mono text-xs break-all">{address}</p>
             </div>
 
-            {/* Info */}
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs text-gray-500">Balance</p>
-                <p className="font-bold">
-                  {balance ? formatUnits(balance as bigint, 18) : "..."}
+            {/* Info faucet */}
+            {status && (
+              <>
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div className="p-3 bg-green-50 rounded-lg">
+                    <p className="text-xs text-gray-500">Balance</p>
+                    <p className="font-bold">{status.balance}</p>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-xs text-gray-500">Monto Faucet</p>
+                    <p className="font-bold">{status.faucetAmount}</p>
+                  </div>
+                </div>
+
+                <p className="text-center">
+                  {status.hasClaimed
+                    ? "✅ Ya reclamaste"
+                    : "💧 Podés reclamar"}
                 </p>
-              </div>
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-xs text-gray-500">Monto Faucet</p>
-                <p className="font-bold">
-                  {faucetAmount ? formatUnits(faucetAmount as bigint, 18) : "..."}
-                </p>
-              </div>
-            </div>
 
-            {/* Estado */}
-            <p className="text-center">
-              {hasClaimed ? "✅ Ya reclamaste" : "💧 Podés reclamar"}
-            </p>
+                {!status.hasClaimed && (
+                  <button
+                    onClick={handleClaim}
+                    disabled={loading}
+                    className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold"
+                  >
+                    {loading ? "⏳ Procesando..." : "Reclamar Tokens"}
+                  </button>
+                )}
 
-            {/* Botón */}
-            <button
-              onClick={handleClaim}
-              disabled={!!hasClaimed || isPending || isConfirming}
-              className={`w-full py-2 rounded-lg text-white font-semibold transition ${
-                hasClaimed || isPending || isConfirming
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700"
-              }`}
-            >
-              {isPending
-                ? "📤 Enviando..."
-                : isConfirming
-                ? "⏳ Confirmando..."
-                : "Reclamar Tokens"}
-            </button>
-
-            {/* Feedback */}
-            {writeError && (
-              <p className="text-red-500 text-sm text-center">
-                ⚠️ {writeError.message}
-              </p>
+                <div>
+                  <h2 className="text-lg font-semibold mb-2">
+                    📜 Usuarios del Faucet
+                  </h2>
+                  {Array.isArray(status.users) && status.users.length > 0 ? (
+                    <ul className="list-disc pl-6 text-sm space-y-1">
+                      {status.users.map((user) => (
+                        <li key={user} className="font-mono break-all">
+                          {user}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 text-sm">Nadie reclamó aún.</p>
+                  )}
+                </div>
+              </>
             )}
-            {isConfirmed && (
-              <p className="text-green-600 text-sm text-center">
-                ✅ Reclamo exitoso
-              </p>
-            )}
-
-            {/* Usuarios */}
-            <div>
-              <h2 className="text-lg font-semibold mb-2">
-                📜 Usuarios del Faucet
-              </h2>
-              {Array.isArray(faucetUsers) && faucetUsers.length > 0 ? (
-                <ul className="list-disc pl-6 text-sm space-y-1">
-                  {faucetUsers.map((user) => (
-                    <li key={user} className="font-mono break-all">
-                      {user}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-500 text-sm">Nadie reclamó aún.</p>
-              )}
-            </div>
           </div>
-        ) : (
-          <p className="text-center text-gray-600">
-            Conecta tu wallet para continuar
-          </p>
         )}
       </div>
     </div>
