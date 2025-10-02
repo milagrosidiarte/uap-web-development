@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAccount, useSignMessage } from "wagmi";
 
-const API_URL = "http://localhost:4000"; // Cambiar si tu backend corre en otra URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 interface FaucetStatus {
   balance: string;
