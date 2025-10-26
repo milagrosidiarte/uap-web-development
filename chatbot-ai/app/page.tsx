@@ -5,13 +5,16 @@ import { useChat } from '@ai-sdk/react';
 import { nanoid } from 'nanoid';
 
 export default function Home() {
-  // ✅ En v5 la API es sendMessage y los mensajes tienen "parts"
+  // 🟢 Versión básica y 100 % compatible con AI SDK v5/v4
   const { messages, sendMessage, status, error } = useChat();
+
   const [input, setInput] = useState('');
   const endRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
+    console.log('📩 Mensajes actualizados:', messages);
   }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,6 +22,7 @@ export default function Home() {
     const trimmed = input.trim();
     if (!trimmed) return;
 
+    // Formato correcto en tu versión → usa "parts"
     await sendMessage({
       id: nanoid(),
       role: 'user',
@@ -32,10 +36,13 @@ export default function Home() {
     <main className="min-h-screen flex flex-col max-w-3xl mx-auto p-4 gap-4">
       <h1 className="text-2xl font-semibold">Chatbot (AI SDK v5)</h1>
 
-      {/* Mensajes */}
+      {/* 💬 Mensajes */}
       <section className="flex-1 overflow-y-auto rounded-xl border p-3 space-y-3">
         {messages.map((m) => (
-          <div key={m.id} className={m.role === 'user' ? 'text-right' : 'text-left'}>
+          <div
+            key={m.id}
+            className={m.role === 'user' ? 'text-right' : 'text-left'}
+          >
             <div
               className={`inline-block px-3 py-2 rounded-lg whitespace-pre-wrap ${
                 m.role === 'user' ? 'bg-slate-200' : 'bg-slate-100'
@@ -59,7 +66,7 @@ export default function Home() {
         <div ref={endRef} />
       </section>
 
-      {/* Formulario */}
+      {/* 🧾 Formulario */}
       <form onSubmit={handleSubmit} className="flex gap-2">
         <input
           value={input}
