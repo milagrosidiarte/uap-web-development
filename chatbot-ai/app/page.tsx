@@ -9,10 +9,31 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
+  // 🔹 Restaurar conversación al cargar
+  useEffect(() => {
+    const saved = localStorage.getItem('chatMessages');
+    if (saved) {
+      try {
+        setMessages(JSON.parse(saved));
+      } catch {
+        localStorage.removeItem('chatMessages');
+      }
+    }
+  }, []);
+
+  // 🔹 Guardar conversación cuando cambia
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('chatMessages', JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  // 🔹 Scroll automático al último mensaje
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Sanitización y normalización
   const sanitize = (text: string) =>
     text.replace(/[<>]/g, '').replace(/script/gi, '').trim();
 
@@ -25,6 +46,13 @@ export default function Home() {
       .replace(/ ?¡/g, ' ¡')
       .trim();
 
+  // 🔹 Borrar conversación
+  const clearChat = () => {
+    localStorage.removeItem('chatMessages');
+    setMessages([]);
+  };
+
+  // 🔹 Enviar mensaje
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -35,63 +63,81 @@ export default function Home() {
     setInput('');
     setIsLoading(true);
 
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: sanitized }],
-      }),
-    });
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: sanitized }],
+        }),
+      });
 
-    if (!response.body) {
+      if (!response.body) {
+        setMessages((prev) => [
+          ...prev,
+          { role: 'assistant', text: 'Error en el stream.' },
+        ]);
+        setIsLoading(false);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let assistantText = '';
+
+      const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
+        if (event.type === 'event') {
+          const data = event.data;
+          if (data === '[DONE]') return;
+
+          assistantText += data;
+          setMessages((prev) => [
+            ...prev.filter((m) => m.role !== 'assistant'),
+            { role: 'assistant', text: assistantText },
+          ]);
+        }
+      });
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        parser.feed(decoder.decode(value, { stream: true }));
+      }
+
+      assistantText = normalizeText(assistantText);
+      setMessages((prev) => [
+        ...prev.filter((m) => m.role !== 'assistant'),
+        { role: 'assistant', text: assistantText },
+      ]);
+    } catch {
       setMessages((prev) => [
         ...prev,
-        { role: 'assistant', text: 'Error en el stream.' },
+        { role: 'assistant', text: 'Error de conexión. Intenta nuevamente.' },
       ]);
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
-    let assistantText = '';
-
-    // ✅ Parser compatible con v1.1.1
-    const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
-      if (event.type === 'event') {
-        const data = event.data;
-        if (data === '[DONE]') return;
-
-        assistantText += data;
-        setMessages((prev) => [
-          ...prev.filter((m) => m.role !== 'assistant'),
-          { role: 'assistant', text: assistantText },
-        ]);
-      }
-    });
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      parser.feed(decoder.decode(value, { stream: true }));
-    }
-
-    assistantText = normalizeText(assistantText);
-    setMessages((prev) => [
-      ...prev.filter((m) => m.role !== 'assistant'),
-      { role: 'assistant', text: assistantText },
-    ]);
-
-    setIsLoading(false);
   };
 
+  // --- Render ---
   return (
     <main className="min-h-screen flex flex-col max-w-3xl mx-auto p-4 gap-4">
-      <h1 className="text-2xl font-semibold text-center mb-2">
-        Chatbot con Next.js + AI SDK
-      </h1>
+      {/* Header */}
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-2xl font-semibold text-center flex-1">
+          Chatbot con Next.js + AI SDK
+        </h1>
+        {messages.length > 0 && (
+          <button
+            onClick={clearChat}
+            className="text-sm text-red-600 hover:underline ml-4"
+          >
+            🗑️ Borrar chat
+          </button>
+        )}
+      </div>
 
-      {/* Área del chat */}
+      {/* Área de conversación */}
       <section className="flex-1 overflow-y-auto rounded-xl border p-3 space-y-3 bg-slate-50 shadow-inner">
         {messages.map((m, i) => (
           <div
@@ -112,6 +158,7 @@ export default function Home() {
             </div>
           </div>
         ))}
+
         {isLoading && (
           <p className="italic text-gray-500 text-sm pl-2">
             Asistente escribiendo…
