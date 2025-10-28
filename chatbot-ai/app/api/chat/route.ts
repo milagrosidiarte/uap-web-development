@@ -4,15 +4,14 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 export const maxDuration = 30;
 
-// --- Rate Limiter simple (por IP) ---
+// --- Rate Limiter simple ---
 const rateLimit = new Map<string, { count: number; last: number }>();
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
-  const windowMs = 60_000; // 1 minuto
-  const limit = 10; // máximo 10 requests/min
-  const minDelay = 3_000; // al menos 3 seg entre requests
-
+  const windowMs = 60_000;
+  const limit = 10;
+  const minDelay = 3_000;
   const record = rateLimit.get(ip);
 
   if (!record) {
@@ -20,7 +19,7 @@ function checkRateLimit(ip: string): boolean {
     return true;
   }
 
-  if (now - record.last < minDelay) return false; // demasiado rápido
+  if (now - record.last < minDelay) return false;
   if (now - record.last > windowMs) {
     rateLimit.set(ip, { count: 1, last: now });
     return true;
@@ -38,7 +37,6 @@ interface IncomingMessage {
   parts?: { type: "text"; text: string }[];
 }
 
-// --- Endpoint principal ---
 export async function POST(req: Request) {
   try {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
@@ -50,7 +48,6 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-
     if (!body || !Array.isArray(body.messages)) {
       return NextResponse.json(
         { error: "Formato de mensaje inválido." },
@@ -58,7 +55,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convertir mensajes al formato del SDK
     const messages: UIMessage[] = body.messages.map((m: IncomingMessage) => ({
       role: m.role,
       parts: m.parts ?? [{ type: "text", text: m.content ?? "" }],
@@ -66,40 +62,44 @@ export async function POST(req: Request) {
 
     const modelMessages = convertToModelMessages(messages);
 
-    // Configurar proveedor OpenRouter
     const openrouter = createOpenRouter({
       apiKey: process.env.OPENROUTER_API_KEY!,
       baseURL:
         process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
     });
 
-    // Solicitar stream al modelo
     const result = await streamText({
       model: openrouter.chat(
         process.env.OPENROUTER_MODEL || "anthropic/claude-3-haiku"
       ),
       messages: modelMessages,
       system:
-        "Eres un asistente útil, seguro y educativo. No reveles información sensible ni privada.",
+        "Eres un asistente útil, seguro y educativo. Responde en español correctamente escrito y con espacios naturales.",
     });
 
-    // Construcción del stream SSE
+    // --- Streaming SSE robusto ---
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
+          let buffer = "";
           for await (const chunk of result.textStream) {
             if (!chunk) continue;
-            // 🔧 Limpieza básica de espacios y saltos de línea
-            const safeChunk = chunk
+
+            // Normalizamos saltos y espacios sin cortar caracteres
+            buffer += chunk;
+            buffer = buffer
+              .replace(/\uFFFD/g, "") // elimina caracteres inválidos
               .replace(/\n+/g, " ")
               .replace(/\s{2,}/g, " ");
-            controller.enqueue(encoder.encode(`data: ${safeChunk}\n\n`));
+
+            controller.enqueue(encoder.encode(`data: ${buffer}\n\n`));
+            buffer = ""; // limpiar para próximo fragmento
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
-          console.error("❌ Error en el stream:", err);
+          console.error("❌ Error en stream:", err);
           try {
             controller.error(err);
           } catch {}

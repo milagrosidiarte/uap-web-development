@@ -12,32 +12,30 @@ export default function Home() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // --- Sanitiza el texto de entrada ---
-  function sanitize(text: string) {
-    return text
+  // --- Sanitizar ---
+  const sanitize = (text: string) =>
+    text
       .replace(/[<>]/g, '')
       .replace(/script/gi, '')
       .replace(/on\w+=/gi, '')
       .trim();
-  }
 
-  // --- Normaliza texto final (puntuación y espacios) ---
-  function normalizeText(text: string) {
-    return text
+  // --- Normalizar texto final ---
+  const normalizeText = (text: string) =>
+    text
       .replace(/\s{2,}/g, ' ')
       .replace(/\s+([.,;!?])/g, '$1')
       .replace(/([.,;!?])([A-Za-zÁÉÍÓÚáéíóúÑñ])/g, '$1 $2')
+      .replace(/ ?¿/g, ' ¿')
+      .replace(/ ?¡/g, ' ¡')
       .trim();
-  }
 
-  // --- Envío del mensaje ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
     if (!trimmed) return;
 
     const sanitized = sanitize(trimmed);
-
     setMessages((prev) => [...prev, { role: 'user', text: sanitized }]);
     setInput('');
     setIsLoading(true);
@@ -60,34 +58,26 @@ export default function Home() {
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8');
+    const decoder = new TextDecoder('utf-8', { fatal: false });
     let buffer = '';
     let assistantText = '';
 
     while (true) {
       const { value, done } = await reader.read();
       if (done) break;
-
       buffer += decoder.decode(value, { stream: true });
 
-      // Procesar bloques SSE
       const events = buffer.split('\n\n');
       buffer = events.pop() || '';
 
       for (const event of events) {
         if (!event.startsWith('data:')) continue;
         const data = event.replace(/^data:\s*/, '');
-
         if (data === '[DONE]') continue;
 
-        // 🔧 Nueva forma: no eliminamos espacios legítimos
-        const cleanData = data
-          .replace(/\n+/g, ' ')
-          .replace(/\s{2,}/g, ' ');
+        // Acumulamos sin cortar caracteres ni espacios
+        assistantText += data.endsWith(' ') ? data : data + ' ';
 
-        assistantText += cleanData.endsWith(' ') ? cleanData : cleanData + ' ';
-
-        // Actualiza el texto mientras se genera
         setMessages((prev) => [
           ...prev.filter((m) => m.role !== 'assistant'),
           { role: 'assistant', text: assistantText },
@@ -95,7 +85,6 @@ export default function Home() {
       }
     }
 
-    // Limpieza final del texto
     assistantText = normalizeText(assistantText);
     setMessages((prev) => [
       ...prev.filter((m) => m.role !== 'assistant'),
@@ -112,7 +101,6 @@ export default function Home() {
         Chatbot con Next.js + AI SDK
       </h1>
 
-      {/* Área de conversación */}
       <section className="flex-1 overflow-y-auto rounded-xl border p-3 space-y-3 bg-slate-50 shadow-inner">
         {messages.map((m, i) => (
           <div
@@ -142,7 +130,6 @@ export default function Home() {
         <div ref={endRef} />
       </section>
 
-      {/* Input */}
       <form onSubmit={handleSubmit} className="flex gap-2 mt-2">
         <input
           value={input}
