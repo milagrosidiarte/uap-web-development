@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser';
 
 export default function Home() {
   const [messages, setMessages] = useState<{ role: string; text: string }[]>([]);
@@ -12,15 +13,9 @@ export default function Home() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // --- Sanitizar ---
   const sanitize = (text: string) =>
-    text
-      .replace(/[<>]/g, '')
-      .replace(/script/gi, '')
-      .replace(/on\w+=/gi, '')
-      .trim();
+    text.replace(/[<>]/g, '').replace(/script/gi, '').trim();
 
-  // --- Normalizar texto final ---
   const normalizeText = (text: string) =>
     text
       .replace(/\s{2,}/g, ' ')
@@ -58,31 +53,27 @@ export default function Home() {
     }
 
     const reader = response.body.getReader();
-    const decoder = new TextDecoder('utf-8', { fatal: false });
-    let buffer = '';
+    const decoder = new TextDecoder('utf-8');
     let assistantText = '';
 
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
+    // ✅ Parser compatible con v1.1.1
+    const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
+      if (event.type === 'event') {
+        const data = event.data;
+        if (data === '[DONE]') return;
 
-      const events = buffer.split('\n\n');
-      buffer = events.pop() || '';
-
-      for (const event of events) {
-        if (!event.startsWith('data:')) continue;
-        const data = event.replace(/^data:\s*/, '');
-        if (data === '[DONE]') continue;
-
-        // Acumulamos sin cortar caracteres ni espacios
-        assistantText += data.endsWith(' ') ? data : data + ' ';
-
+        assistantText += data;
         setMessages((prev) => [
           ...prev.filter((m) => m.role !== 'assistant'),
           { role: 'assistant', text: assistantText },
         ]);
       }
+    });
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parser.feed(decoder.decode(value, { stream: true }));
     }
 
     assistantText = normalizeText(assistantText);
@@ -91,7 +82,6 @@ export default function Home() {
       { role: 'assistant', text: assistantText },
     ]);
 
-    decoder.decode();
     setIsLoading(false);
   };
 
@@ -101,6 +91,7 @@ export default function Home() {
         Chatbot con Next.js + AI SDK
       </h1>
 
+      {/* Área del chat */}
       <section className="flex-1 overflow-y-auto rounded-xl border p-3 space-y-3 bg-slate-50 shadow-inner">
         {messages.map((m, i) => (
           <div
@@ -121,7 +112,6 @@ export default function Home() {
             </div>
           </div>
         ))}
-
         {isLoading && (
           <p className="italic text-gray-500 text-sm pl-2">
             Asistente escribiendo…
@@ -130,6 +120,7 @@ export default function Home() {
         <div ref={endRef} />
       </section>
 
+      {/* Input */}
       <form onSubmit={handleSubmit} className="flex gap-2 mt-2">
         <input
           value={input}
