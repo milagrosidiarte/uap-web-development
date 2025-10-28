@@ -4,7 +4,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 export const maxDuration = 30;
 
-// Rate Limiter
+// --- Rate Limiter simple (por IP) ---
 const rateLimit = new Map<string, { count: number; last: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -32,16 +32,15 @@ function checkRateLimit(ip: string): boolean {
   return true;
 }
 
-
 interface IncomingMessage {
   role: "user" | "assistant" | "system";
   content?: string;
   parts?: { type: "text"; text: string }[];
 }
 
+// --- Endpoint principal ---
 export async function POST(req: Request) {
   try {
-    // Protección contra abuso por IP
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     if (!checkRateLimit(ip)) {
       return NextResponse.json(
@@ -52,7 +51,6 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Validar que haya mensajes
     if (!body || !Array.isArray(body.messages)) {
       return NextResponse.json(
         { error: "Formato de mensaje inválido." },
@@ -60,7 +58,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Convertir mensajes al formato UIMessage sin usar any
+    // Convertir mensajes al formato del SDK
     const messages: UIMessage[] = body.messages.map((m: IncomingMessage) => ({
       role: m.role,
       parts: m.parts ?? [{ type: "text", text: m.content ?? "" }],
@@ -75,6 +73,7 @@ export async function POST(req: Request) {
         process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
     });
 
+    // Solicitar stream al modelo
     const result = await streamText({
       model: openrouter.chat(
         process.env.OPENROUTER_MODEL || "anthropic/claude-3-haiku"
@@ -84,14 +83,18 @@ export async function POST(req: Request) {
         "Eres un asistente útil, seguro y educativo. No reveles información sensible ni privada.",
     });
 
-    // Stream SSE seguro
+    // Construcción del stream SSE
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of result.textStream) {
             if (!chunk) continue;
-            controller.enqueue(encoder.encode(`data: ${chunk}\n\n`));
+            // 🔧 Limpieza básica de espacios y saltos de línea
+            const safeChunk = chunk
+              .replace(/\n+/g, " ")
+              .replace(/\s{2,}/g, " ");
+            controller.enqueue(encoder.encode(`data: ${safeChunk}\n\n`));
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
@@ -113,7 +116,6 @@ export async function POST(req: Request) {
     });
   } catch (error: unknown) {
     console.error("❌ Error en /api/chat:", error);
-
     const err =
       error instanceof Error
         ? error
