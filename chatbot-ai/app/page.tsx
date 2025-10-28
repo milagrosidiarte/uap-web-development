@@ -58,7 +58,7 @@ export default function Home() {
       return;
     }
 
-    // Decodificación binaria manual y segura (sin fragmentar caracteres)
+    // Decodificación binaria correcta (sin romper acentos ni letras)
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
@@ -71,14 +71,18 @@ export default function Home() {
       buffer += decoder.decode(value, { stream: true });
 
       // Procesar cada bloque SSE completo
-      const parts = buffer.split('\n\n');
-      buffer = parts.pop() || '';
+      const events = buffer.split('\n\n');
+      buffer = events.pop() || '';
 
-      for (const part of parts) {
-        if (!part.startsWith('data:')) continue;
-        const text = part.replace(/^data:\s*/, '');
-        if (text === '[DONE]') continue;
-        assistantText += text;
+      for (const event of events) {
+        if (!event.startsWith('data:')) continue;
+        const data = event.replace(/^data:\s*/, '');
+
+        if (data === '[DONE]') continue;
+
+        // Unir todos los fragmentos en una sola respuesta fluida
+        assistantText += data.replace(/\n/g, ' ').trim();
+
         setMessages((prev) => [
           ...prev.filter((m) => m.role !== 'assistant'),
           { role: 'assistant', text: normalizeText(assistantText) },
@@ -86,7 +90,7 @@ export default function Home() {
       }
     }
 
-    decoder.decode(); // vaciar buffer final
+    decoder.decode(); // limpia lo que quede
     setIsLoading(false);
   };
 
