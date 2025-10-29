@@ -4,7 +4,7 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 export const maxDuration = 30;
 
-// --- Rate Limiter simple ---
+// Rate Limit
 const rateLimit = new Map<string, { count: number; last: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         "Eres un asistente útil, seguro y educativo. Responde en español correctamente escrito y con espacios naturales.",
     });
 
-    // --- Streaming SSE robusto ---
+    // Streaming SSE
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
           controller.close();
         } catch (err) {
-          console.error("❌ Error en stream:", err);
+          console.error("Error en stream:", err);
           try {
             controller.error(err);
           } catch {}
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: unknown) {
-    console.error("❌ Error en /api/chat:", error);
+    console.error("Error en /api/chat:", error);
     const err =
       error instanceof Error
         ? error

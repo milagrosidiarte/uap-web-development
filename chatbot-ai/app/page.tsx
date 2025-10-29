@@ -9,7 +9,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
-  // 🔹 Restaurar conversación al cargar
+  // Restaurar conversación guardada
   useEffect(() => {
     const saved = localStorage.getItem('chatMessages');
     if (saved) {
@@ -21,22 +21,23 @@ export default function Home() {
     }
   }, []);
 
-  // 🔹 Guardar conversación cuando cambia
+  // Guardar conversación cuando cambia
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem('chatMessages', JSON.stringify(messages));
     }
   }, [messages]);
 
-  // 🔹 Scroll automático al último mensaje
+  // Scroll automático al final
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Sanitización y normalización
+  // Sanitizar texto
   const sanitize = (text: string) =>
     text.replace(/[<>]/g, '').replace(/script/gi, '').trim();
 
+  // Normalizar texto final
   const normalizeText = (text: string) =>
     text
       .replace(/\s{2,}/g, ' ')
@@ -46,13 +47,13 @@ export default function Home() {
       .replace(/ ?¡/g, ' ¡')
       .trim();
 
-  // 🔹 Borrar conversación
+  // Limpiar chat
   const clearChat = () => {
     localStorage.removeItem('chatMessages');
     setMessages([]);
   };
 
-  // 🔹 Enviar mensaje
+  // Enviar mensaje
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -85,30 +86,50 @@ export default function Home() {
       const decoder = new TextDecoder('utf-8');
       let assistantText = '';
 
+      // Antes de empezar a recibir, agregamos un nuevo mensaje vacío del asistente
+      setMessages((prev) => [...prev, { role: 'assistant', text: '' }]);
+
       const parser = createParser((event: ParsedEvent | ReconnectInterval) => {
         if (event.type === 'event') {
           const data = event.data;
           if (data === '[DONE]') return;
 
           assistantText += data;
-          setMessages((prev) => [
-            ...prev.filter((m) => m.role !== 'assistant'),
-            { role: 'assistant', text: assistantText },
-          ]);
+
+          // Actualizamos solo el ÚLTIMO mensaje del asistente
+          setMessages((prev) => {
+            const updated = [...prev];
+            const last = updated.pop();
+            if (last && last.role === 'assistant') {
+              last.text = assistantText;
+              updated.push(last);
+            } else {
+              updated.push(last!);
+              updated.push({ role: 'assistant', text: assistantText });
+            }
+            return updated;
+          });
         }
       });
 
+      // Leer el stream SSE
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         parser.feed(decoder.decode(value, { stream: true }));
       }
 
+      // Limpieza final del texto del asistente
       assistantText = normalizeText(assistantText);
-      setMessages((prev) => [
-        ...prev.filter((m) => m.role !== 'assistant'),
-        { role: 'assistant', text: assistantText },
-      ]);
+      setMessages((prev) => {
+        const updated = [...prev];
+        const last = updated.pop();
+        if (last && last.role === 'assistant') {
+          last.text = assistantText;
+          updated.push(last);
+        }
+        return updated;
+      });
     } catch {
       setMessages((prev) => [
         ...prev,
@@ -119,10 +140,10 @@ export default function Home() {
     }
   };
 
-  // --- Render ---
+  // Render del chat
   return (
     <main className="min-h-screen flex flex-col max-w-3xl mx-auto p-4 gap-4">
-      {/* Header */}
+      {/* Encabezado */}
       <div className="flex justify-between items-center mb-2">
         <h1 className="text-2xl font-semibold text-center flex-1">
           Chatbot con Next.js + AI SDK
