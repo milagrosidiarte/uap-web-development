@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { tool } from "ai";
+import { searchBooksTool } from "@/lib/tools/searchBooksTool";
+import { getBookDetailsTool } from "@/lib/tools/getBookDetailsTool";
 
 export const maxDuration = 30;
 
@@ -68,13 +71,19 @@ export async function POST(req: Request) {
         process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
     });
 
-    const result = await streamText({
+   const result = await streamText({
       model: openrouter.chat(
         process.env.OPENROUTER_MODEL || "anthropic/claude-3-haiku"
       ),
       messages: modelMessages,
       system:
-        "Eres un asistente útil, seguro y educativo. Responde en español correctamente escrito y con espacios naturales.",
+        "Eres un asistente experto en libros. Si el usuario pide recomendaciones o busca libros, usa la herramienta searchBooks. Siempre responde en español, con buena gramática y tono natural.",
+      tools: {
+        searchBooks: tool(searchBooksTool),
+        getBookDetails: tool(getBookDetailsTool),
+      },
+      toolChoice: "auto",
+      temperature: 0.7,
     });
 
     // Streaming SSE
