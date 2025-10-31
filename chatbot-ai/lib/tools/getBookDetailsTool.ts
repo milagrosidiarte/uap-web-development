@@ -32,6 +32,7 @@ export const getBookDetailsTool = {
 
     const url = `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(input.bookId)}?key=${apiKey}`;
     const res = await fetch(url, { cache: "no-store" });
+    console.log("🛠 Ejecutando getBookDetails con:", input);
 
     if (!res.ok) {
       throw new Error(`Error al obtener detalles del libro: ${res.statusText}`);
@@ -58,3 +59,4 @@ export const getBookDetailsTool = {
     };
   },
 };
+

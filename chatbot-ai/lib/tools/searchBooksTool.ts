@@ -37,6 +37,7 @@ export const searchBooksTool = {
   // Función ejecutora
   async execute(input: z.infer<typeof searchBooksSchema>): Promise<GoogleBookBasic[]> {
     const apiKey = process.env.GOOGLE_BOOKS_API_KEY;
+    console.log("🛠 Ejecutando searchBooks con:", input);
     if (!apiKey) throw new Error("Falta GOOGLE_BOOKS_API_KEY");
 
     const results = await searchGoogleBooks({

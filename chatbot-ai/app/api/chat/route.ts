@@ -71,20 +71,59 @@ export async function POST(req: Request) {
         process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1",
     });
 
-   const result = await streamText({
+    const result = await streamText({
       model: openrouter.languageModel(
-        process.env.OPENROUTER_MODEL || "anthropic/claude-3-5-haiku"
+        process.env.OPENROUTER_MODEL || "anthropic/claude-3-5-sonnet"
       ),
       messages: modelMessages,
-      system:
-        "Eres un asistente experto en libros. Si el usuario pide recomendaciones o busca libros, usa la herramienta searchBooks. Siempre responde en español, con buena gramática y tono natural.",
+      system: `
+    Eres un asistente experto en libros.
+    Si el usuario pide recomendaciones o información sobre libros,
+    usa las herramientas disponibles en lugar de inventar datos.
+    Usa "searchBooks" para buscar títulos reales y
+    "getBookDetails" para mostrar información detallada.
+    Responde siempre en español natural.
+      `,
       tools: {
         searchBooks: tool(searchBooksTool),
         getBookDetails: tool(getBookDetailsTool),
       },
+      experimental_repairToolCall: async (context) => {
+        // Extraemos la info del toolCall con chequeo de tipos seguro
+        const toolCall = context.toolCall;
+        let toolName = "desconocido";
+        let parsedArgs: unknown = {};
+
+        if ("toolName" in toolCall && typeof toolCall.toolName === "string") {
+          toolName = toolCall.toolName;
+        }
+
+        // Algunos modelos devuelven los argumentos como string JSON
+        if ("arguments" in toolCall) {
+          const raw = (toolCall as { arguments?: string | object }).arguments;
+          if (typeof raw === "string") {
+            try {
+              parsedArgs = JSON.parse(raw);
+            } catch {
+              parsedArgs = raw;
+            }
+          } else if (typeof raw === "object" && raw !== null) {
+            parsedArgs = raw;
+          }
+        }
+
+        console.warn("🧩 Reparando tool call detectado:", {
+          toolName,
+          parsedArgs,
+        });
+
+        return null; // No modificamos la llamada, solo la registramos
+      },
+
       toolChoice: "auto",
       temperature: 0.7,
     });
+
 
     // Streaming SSE
     const encoder = new TextEncoder();
