@@ -72,8 +72,8 @@ export async function POST(req: Request) {
     });
 
    const result = await streamText({
-      model: openrouter.chat(
-        process.env.OPENROUTER_MODEL || "anthropic/claude-3-haiku"
+      model: openrouter.languageModel(
+        process.env.OPENROUTER_MODEL || "anthropic/claude-3-5-haiku"
       ),
       messages: modelMessages,
       system:
